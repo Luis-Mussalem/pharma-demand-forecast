@@ -1,7 +1,7 @@
 import pandas as pd
 
-import pandas as pd
-
+from src.logger import setup_logger
+logger = setup_logger()
 
 EXPECTED_COLUMNS = [
     "Store",
@@ -24,7 +24,7 @@ EXPECTED_DTYPES = {
     "Customers": "int64",
     "Open": "int64",
     "Promo": "int64",
-    "StateHoliday": "object",
+    "StateHoliday": "category",
     "SchoolHoliday": "int64",
 }
 
@@ -81,8 +81,10 @@ def validate_dataset(df: pd.DataFrame) -> None:
     """
     Runs all validation checks.
     """
+    logger.info("Starting dataset validation...")
+
     validate_columns(df)
     validate_dtypes(df)
     validate_granularity(df)
 
-print("Validation passed successfully.")
+    logger.info("Dataset validation passed successfully.")
