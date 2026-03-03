@@ -132,7 +132,9 @@ Notebooks are exploratory tools, not production execution engines.
 ---
 
 ## Project Structure
-'''
+
+```
+
 pharma-demand-forecast/
 │
 ├── data/
@@ -153,7 +155,9 @@ pharma-demand-forecast/
 │ └── ingestion.py (next step)
 │
 └── README.md
-'''
+
+```
+
 ---
 
 ## Author
