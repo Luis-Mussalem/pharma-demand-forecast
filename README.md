@@ -121,13 +121,57 @@ Notebooks are exploratory tools, not production execution engines.
 
 ---
 
-## Next Steps
+### ✅ Ingestion Layer
 
-- Implement ingestion layer (`src/ingestion.py`)
-- Create a reproducible pipeline entry point (`main.py`)
-- Add feature engineering layer
-- Introduce time-based train-test split
-- Prepare modeling architecture
+- Dedicated `src/ingestion.py` module
+- Explicit dtype enforcement during CSV loading
+- Deterministic datetime parsing
+- Immediate schema validation after load
+- CLI-executable via `main.py`
+- Fail-fast behavior on invalid input
+
+---
+
+## Pipeline Execution
+
+The project includes a CLI-ready pipeline entry point implemented in `main.py`.
+
+This allows the entire data ingestion and validation workflow to be executed outside notebooks in a deterministic way.
+
+Example execution:
+
+python main.py --data-path data/raw/train.csv
+
+Key characteristics of the entry point:
+
+- CLI interface implemented with `argparse`
+- Runtime configuration through command line arguments
+- Structured logging during execution
+- Automatic dataset validation during ingestion
+- Fail-fast behavior when data contracts are violated
+
+This design prepares the pipeline for integration with orchestration systems such as Airflow, Docker, or CI/CD environments.
+
+## Pipeline Architecture
+
+The current pipeline execution flow is:
+
+main.py
+   ↓
+ingestion.py
+   ↓
+validation.py
+   ↓
+logger.py
+
+Each module has a clearly defined responsibility:
+
+- **main.py** — CLI entry point and pipeline orchestration
+- **ingestion.py** — controlled dataset loading with dtype enforcement
+- **validation.py** — data contract enforcement (schema, types, granularity)
+- **logger.py** — centralized structured logging system
+
+This layered architecture ensures modularity, observability, and deterministic execution.
 
 ---
 
@@ -138,27 +182,49 @@ Notebooks are exploratory tools, not production execution engines.
 pharma-demand-forecast/
 │
 ├── data/
-│ ├── raw/
-│ ├── interim/
-│ └── processed/
+│   ├── raw/
+│   ├── interim/
+│   └── processed/
 │
 ├── docs/
-│ └── engineering_decisions.md
+│   ├── engineering_decisions.md
+│   └── data_dictionary.md
 │
 ├── logs/
 │
 ├── notebooks/
+│   └── exploration.ipynb
 │
 ├── src/
-│ ├── validation.py
-│ ├── logger.py
-│ └── ingestion.py (next step)
+│   ├── ingestion.py
+│   ├── validation.py
+│   └── logger.py
+│
+├── main.py        # CLI pipeline entry point
 │
 └── README.md
 
 ```
 
 ---
+
+## Quick Start
+
+Clone the repository and run the pipeline:
+
+git clone https://github.com/<your-user>/pharma-demand-forecast.git
+cd pharma-demand-forecast
+
+python main.py --data-path data/raw/train.csv
+
+---
+
+## Next Steps
+
+- Implement temporal train-validation split layer
+- Introduce transformation/processing module
+- Prepare feature engineering isolation
+- Implement time-aware modeling architecture
 
 ## Author
 

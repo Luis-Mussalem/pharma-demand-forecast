@@ -170,3 +170,32 @@ Separating ingestion from exploration ensures:
 ### Improvements
 - Logger refactored to idempotent configuration
 - Robust dtype comparison using is_dtype_equal
+
+## Day 3 — CLI Entry Point Implementation
+
+### Decision
+
+Implemented a CLI-ready `main.py` using `argparse`.
+
+### Why
+
+- Remove dependency on notebook execution
+- Enable deterministic pipeline execution
+- Prepare project for orchestration tools (Airflow, Docker, CI/CD)
+- Allow runtime configuration via command line
+
+### Implementation
+
+- Required argument: `--data-path`
+- Optional arguments:
+  - `--log-level`
+  - `--save-processed`
+  - `--output-path`
+- Structured error handling with `sys.exit(1)`
+- Explicit path resolution using `Path.resolve()`
+
+### Engineering Insight
+
+Production pipelines must not rely on hardcoded paths or execution context.
+CLI configuration ensures reproducibility and portability.
+

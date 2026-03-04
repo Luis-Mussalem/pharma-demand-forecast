@@ -16,12 +16,12 @@
 ## Columns Description
 
 ### Store
-- Type: Integer
+- Type: int64
 - Description: Unique identifier of each store
 - Role: Primary entity key
 
 ### DayOfWeek
-- Type: Integer (1–7)
+- Type: int64 (1–7)
 - Description: Day of week (1 = Monday, 7 = Sunday)
 
 ### Date
@@ -29,15 +29,17 @@
 - Description: Daily observation date
 - Role: Time index
 - Important: Must be converted to datetime format
+- Enforced as datetime64[ns] during ingestion
 
 ### Sales
-- Type: Float
+- Type: int64
 - Description: Daily sales revenue
 - Role: Target variable
-- Notes: Zero when store is closed
+- Notes: - Zero when store is closed
+- Enforced as int64 in data contract
 
 ### Customers
-- Type: Integer
+- Type: int64
 - Description: Number of customers that visited the store
 - Role: Predictor variable
 
