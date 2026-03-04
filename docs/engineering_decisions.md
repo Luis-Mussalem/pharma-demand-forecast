@@ -234,3 +234,98 @@ split:
 Temporal integrity must be enforced before any feature engineering step,
 especially when lag or rolling-window features are introduced.
 
+## Day 3 — Feature Engineering Pipeline
+
+### Decision
+
+Implemented a dedicated feature engineering module (`src/processing.py`) responsible for generating model-ready features.
+
+### Rationale
+
+Feature engineering should be isolated from ingestion and validation layers to maintain clear responsibilities and improve pipeline maintainability.
+
+Separating feature transformations allows:
+
+- easier experimentation
+- controlled addition of new features
+- better testing of transformations
+- prevention of unintended data leakage
+
+### Implementation
+
+The feature engineering module includes:
+
+- `create_calendar_features`
+- `create_lag_features`
+- `create_rolling_features`
+- `run_feature_pipeline`
+
+All transformations are orchestrated through a centralized feature pipeline.
+
+### Features Implemented
+
+Calendar Features
+
+- year
+- month
+- day
+- week_of_year
+
+Lag Features
+
+- `lag_sales_1`
+- `lag_sales_7`
+
+Rolling Window Features
+
+- `rolling_mean_sales_7`
+- `rolling_mean_sales_14`
+- `rolling_std_sales_7`
+
+### Engineering Insight
+
+Lag and rolling features must be computed with strict temporal ordering and correct grouping by store to avoid mixing signals across entities.
+
+All lag calculations are performed using: groupby("Store").shift()
+ensuring that each store's historical signal remains isolated.
+
+---
+
+## Day 4 — Leakage-Safe Validation Feature Generation
+
+### Problem
+
+After performing a temporal train-validation split, the first observations in the validation set lack historical context required to compute lag and rolling features.
+
+Example:
+
+Train ends at: 2015-04-30
+Validation begins at: 2015-05-01
+To compute: lag_sales_1 
+
+for the first validation day, the pipeline requires the previous day’s sales from the training set.
+
+### Solution
+
+A new function was implemented: generate_validation_features() 
+This function:
+
+1. Retrieves the last observations of each store from the training dataset.
+2. Concatenates this historical context with the validation dataset.
+3. Runs the feature engineering pipeline.
+4. Removes the historical rows afterward.
+
+### Result
+
+This guarantees:
+
+- correct lag computation
+- consistent rolling window statistics
+- no temporal leakage
+- production-grade feature generation
+
+### Engineering Insight
+
+Forecasting pipelines must preserve **temporal context across dataset boundaries**.
+
+Naively generating features on the validation set alone results in incomplete historical signals and inconsistent model inputs.

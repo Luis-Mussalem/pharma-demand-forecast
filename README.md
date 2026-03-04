@@ -112,6 +112,22 @@ Granularity is validated as part of the **data contract layer**.
 - Protection against temporal data leakage
 - Logging of training and validation periods
 
+## Feature Engineering Pipeline
+
+- Dedicated transformation module (`src/processing.py`)
+- Modular feature pipeline architecture
+- Calendar-based feature generation
+- Lag-based features grouped by store
+- Rolling window statistics for historical sales patterns
+
+## Leakage-Safe Feature Generation
+
+Validation features are generated using historical context from the training dataset.
+
+This prevents loss of lag and rolling window information at the temporal boundary between training and validation sets.
+
+The pipeline concatenates recent training observations with the validation dataset during feature generation and removes them afterward.
+
 ---
 
 # Pipeline Architecture
@@ -122,53 +138,60 @@ CLI Execution
 `python main.py --config config/pipeline_config.yaml`
 
 ```
-            ┌─────────────────┐
-            │     main.py     │
-            │ Pipeline Orchestration │
-            └────────┬────────┘
-                     │
-                     ▼
-            ┌─────────────────┐
-            │ config_loader.py │
-            │ Load YAML Config │
-            └────────┬────────┘
-                     │
-                     ▼
-            ┌─────────────────┐
-            │   ingestion.py   │
-            │ Controlled Data  │
-            │ Loading          │
-            └────────┬────────┘
-                     │
-                     ▼
-            ┌─────────────────┐
-            │  validation.py   │
-            │ Data Contract    │
-            │ Enforcement      │
-            └────────┬────────┘
-                     │
-                     ▼
-            ┌─────────────────┐
-            │  splitting.py    │
-            │ Temporal Split   │
-            │ (Leakage Safe)   │
-            └────────┬────────┘
-                     │
-          ┌──────────┴──────────┐
-          ▼                     ▼
-   ┌───────────────┐   ┌───────────────┐
-   │   train_df    │   │ validation_df │
-   └───────────────┘   └───────────────┘
+                ┌─────────────────────────┐
+                │         main.py         │
+                │  Pipeline Orchestration │
+                └────────────┬────────────┘
+                             │
+                             ▼
+                ┌─────────────────────────┐
+                │     config_loader.py    │
+                │   Load YAML Config      │
+                └────────────┬────────────┘
+                             │
+                             ▼
+                ┌─────────────────────────┐
+                │       ingestion.py      │
+                │   Controlled Data Load  │
+                └────────────┬────────────┘
+                             │
+                             ▼
+                ┌─────────────────────────┐
+                │       validation.py     │
+                │   Data Contract Layer   │
+                └────────────┬────────────┘
+                             │
+                             ▼
+                ┌─────────────────────────┐
+                │       splitting.py      │
+                │   Temporal Train Split  │
+                └────────────┬────────────┘
+                             │
+                             ▼
+                ┌─────────────────────────┐
+                │       processing.py     │
+                │    Feature Engineering  │
+                │ (calendar, lag, rolling)│
+                └────────────┬────────────┘
+                             │
+                 ┌───────────┴───────────┐
+                 ▼                       ▼
+          ┌───────────────┐       ┌───────────────┐
+          │   train_df    │       │ validation_df │
+          │ feature set   │       │ feature set   │
+          └───────────────┘       └───────────────┘
 ```
 
 Each module has a clearly defined responsibility:
 
+Each module has a clearly defined responsibility:
+
 - **main.py** — CLI entry point and pipeline orchestration  
-- **config_loader.py** — configuration management  
+- **config_loader.py** — external configuration loader  
 - **ingestion.py** — controlled dataset loading  
-- **validation.py** — data contract enforcement  
-- **splitting.py** — deterministic temporal split  
-- **logger.py** — centralized logging system  
+- **validation.py** — schema and granularity enforcement  
+- **splitting.py** — deterministic temporal train-validation split  
+- **processing.py** — feature engineering pipeline (calendar, lag, rolling features)
 
 ---
 
