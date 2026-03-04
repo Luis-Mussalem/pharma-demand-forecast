@@ -7,7 +7,7 @@ from src.ingestion import load_data
 from src.logger import get_logger
 from src.config_loader import load_config
 from src.splitting import temporal_train_validation_split
-from src.processing import run_feature_pipeline
+from src.processing import run_feature_pipeline, generate_validation_features
 
 def parse_arguments() -> argparse.Namespace:
     """
@@ -90,7 +90,11 @@ def main():
         logger.info(f"Validation dataset shape: {validation_df.shape}")
 
         train_df = run_feature_pipeline(train_df)
-        validation_df = run_feature_pipeline(validation_df)
+        validation_df = generate_validation_features(
+            train_df,
+            validation_df,
+            max_lag=7
+            )
 
         logger.info("Feature engineering completed successfully.")
 
@@ -103,7 +107,8 @@ def main():
             output_path = Path(args.output_path).resolve()
             output_path.parent.mkdir(parents=True, exist_ok=True)
 
-            df.to_csv(output_path, index=False)
+            train_df.to_csv(output_path / "train_processed.csv", index=False)
+            validation_df.to_csv(output_path / "validation_processed.csv", index=False)
             logger.info(f"Processed dataset saved to {output_path}")
         
         logger.info("Pipeline execution completed successfully.")

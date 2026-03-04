@@ -10,16 +10,6 @@ logger = get_logger()
 def create_calendar_features(df: pd.DataFrame) -> pd.DataFrame:
     """
     Generate calendar-based features from the Date column.
-
-    Parameters
-    ----------
-    df : pd.DataFrame
-        Input dataset containing a Date column.
-
-    Returns
-    -------
-    pd.DataFrame
-        Dataset with calendar features added.
     """
 
     logger.info("Generating calendar features.")
@@ -54,8 +44,17 @@ def create_lag_features(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 def run_feature_pipeline(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Execute the full feature engineering pipeline.
+
+    This function orchestrates all feature transformations in the correct order.
+    """
 
     logger.info("Starting feature engineering pipeline.")
+
+    df = df.copy()
+
+    df = df.sort_values(["Store", "Date"])
 
     df = create_calendar_features(df)
 
@@ -64,3 +63,38 @@ def run_feature_pipeline(df: pd.DataFrame) -> pd.DataFrame:
     logger.info("Feature engineering pipeline completed successfully.")
 
     return df
+
+def generate_validation_features(
+    train_df: pd.DataFrame,
+    validation_df: pd.DataFrame,
+    max_lag: int = 7
+) -> pd.DataFrame:
+    """
+    Generate validation features using historical context from the train dataset.
+
+    This prevents losing lag information at the boundary between
+    train and validation sets.
+    """
+
+    logger.info("Generating validation features with historical context.")
+
+    # Retrieve last observations from training set
+    train_tail = train_df.groupby("Store").tail(max_lag)
+
+    # Concatenate train history with validation
+    validation_with_history = pd.concat(
+        [train_tail, validation_df],
+        axis=0
+    )
+
+    # Run feature pipeline
+    validation_with_history = run_feature_pipeline(validation_with_history)
+
+    # Remove historical rows
+    validation_features = validation_with_history.loc[
+        validation_with_history["Date"].isin(validation_df["Date"])
+    ]
+
+    logger.info("Validation features generated successfully.")
+
+    return validation_features
