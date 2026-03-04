@@ -43,6 +43,35 @@ def create_lag_features(df: pd.DataFrame) -> pd.DataFrame:
 
     return df
 
+def create_rolling_features(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Create rolling window statistics for Sales grouped by Store.
+    """
+
+    logger.info("Generating rolling window features.")
+
+    df = df.copy()
+
+    df = df.sort_values(["Store", "Date"])
+
+    sales_group = df.groupby("Store")["Sales"]
+
+    df["rolling_mean_sales_7"] = (
+        sales_group.shift(1).rolling(7).mean()
+    )
+
+    df["rolling_mean_sales_14"] = (
+        sales_group.shift(1).rolling(14).mean()
+    )
+
+    df["rolling_std_sales_7"] = (
+        sales_group.shift(1).rolling(7).std()
+    )
+
+    logger.info("Rolling window features generated successfully.")
+
+    return df
+
 def run_feature_pipeline(df: pd.DataFrame) -> pd.DataFrame:
     """
     Execute the full feature engineering pipeline.
@@ -59,6 +88,8 @@ def run_feature_pipeline(df: pd.DataFrame) -> pd.DataFrame:
     df = create_calendar_features(df)
 
     df = create_lag_features(df)
+
+    df = create_rolling_features(df)
 
     logger.info("Feature engineering pipeline completed successfully.")
 
