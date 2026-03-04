@@ -7,6 +7,7 @@ from src.ingestion import load_data
 from src.logger import get_logger
 from src.config_loader import load_config
 from src.splitting import temporal_train_validation_split
+from src.processing import run_feature_pipeline
 
 def parse_arguments() -> argparse.Namespace:
     """
@@ -87,6 +88,11 @@ def main():
         logger.info("Temporal split completed successfully.")
         logger.info(f"Train dataset shape: {train_df.shape}")
         logger.info(f"Validation dataset shape: {validation_df.shape}")
+
+        train_df = run_feature_pipeline(train_df)
+        validation_df = run_feature_pipeline(validation_df)
+
+        logger.info("Feature engineering completed successfully.")
 
         if args.save_processed:
             if args.output_path is None:
