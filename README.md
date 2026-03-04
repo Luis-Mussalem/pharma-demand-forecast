@@ -1,256 +1,371 @@
 # Pharma Demand Forecast — Data Engineering Pipeline
 
+![Python](https://img.shields.io/badge/Python-3.12-blue)
+![Pipeline](https://img.shields.io/badge/Data%20Pipeline-Modular-green)
+![Architecture](https://img.shields.io/badge/Architecture-Data%20Engineering-orange)
+![License](https://img.shields.io/badge/License-MIT-lightgrey)
+
 ## Project Overview
 
-This project focuses on building a structured and reproducible data engineering pipeline for daily demand forecasting using the Rossmann Store Sales dataset.
+This project focuses on designing a **structured and reproducible data engineering pipeline** for daily demand forecasting using the **Rossmann Store Sales dataset**.
 
-The primary goal is not only forecasting performance, but to design a modular architecture that enforces:
+The objective is not only predictive performance, but the implementation of a **production-oriented data pipeline architecture** that enforces:
 
-- Explicit data contracts
-- Schema validation
-- Type enforcement
-- Granularity control
-- Structured logging
-- Reproducibility
+- Explicit data contracts  
+- Schema validation  
+- Type enforcement  
+- Granularity control  
+- Temporal data integrity  
+- Structured logging  
+- Deterministic execution  
 
-This project represents a transition from analytical exploration to production-oriented data architecture.
-
----
-
-## Technical Objectives
-
-- Build a modular pipeline using a `src/` structure
-- Enforce strict schema and data type validation
-- Prevent data leakage through controlled transformations
-- Implement structured logging for observability
-- Ensure reproducibility outside notebook environments
+The project emphasizes **engineering discipline in data workflows**, moving from exploratory notebooks toward modular, production-ready pipelines.
 
 ---
 
-## Data Granularity
+# Architecture Highlights
+
+This project focuses on applying **production-grade engineering principles** to a forecasting workflow.
+
+Key architectural decisions:
+
+- **Configuration-driven pipeline** using YAML
+- **Strict data contracts** enforced before transformations
+- **Fail-fast validation** to prevent silent data corruption
+- **Temporal integrity enforcement** before feature engineering
+- **Modular pipeline design** enabling independent testing of components
+
+The architecture mirrors patterns commonly used in **data platforms and ML pipelines in production environments**.
+
+---
+
+# Technical Objectives
+
+- Build a modular pipeline using a `src/` project architecture  
+- Enforce strict schema and dtype validation  
+- Prevent temporal data leakage in forecasting workflows  
+- Implement structured logging for observability  
+- Externalize configuration through YAML files  
+- Ensure deterministic pipeline execution outside notebooks  
+
+---
+
+# Data Granularity
 
 Unit of analysis:
 
 **Store + Date**
 
-Each row represents the daily sales performance of a specific store.
+Each row represents the **daily sales performance of a store**.
 
-All transformations and validations respect this aggregation level to prevent inconsistencies and data leakage.
+All transformations and validations enforce this level of aggregation to ensure:
+
+- dataset consistency  
+- prevention of duplicate records  
+- reliable feature engineering  
+
+Granularity is validated as part of the **data contract layer**.
 
 ---
 
-## Current Implementation Status
+# Current Implementation Status
 
-### ✅ CLI Pipeline Entry Point
+## CLI Pipeline Entry Point
 
 - Executable pipeline through `main.py`
 - CLI interface implemented with `argparse`
 - Pipeline execution configured via `--config`
 - Deterministic execution independent of notebook environments
 
-### ✅ External Pipeline Configuration
+## External Pipeline Configuration
 
 - Pipeline parameters externalized through `config/pipeline_config.yaml`
 - Centralized configuration management
 - Enables reproducible experiments and environment-independent execution
 - Configuration loaded via `src/config_loader.py`
 
-### ✅ Data Ingestion Layer
+## Data Ingestion Layer
 
 - Dedicated ingestion module (`src/ingestion.py`)
 - Controlled CSV loading with explicit dtype definitions
 - Explicit datetime parsing for temporal fields
-- Integration with validation layer
+- Immediate integration with validation layer
 
-### ✅ Data Contract & Validation Layer
+## Data Contract & Validation Layer
 
 - Expected schema enforcement
 - Explicit dtype validation
-- Granularity validation (Store + Date uniqueness)
+- Granularity validation (`Store + Date` uniqueness)
 - Fail-fast behavior on invalid datasets
 
-### ✅ Structured Logging System
+## Structured Logging System
 
 - Console logging with timestamps and severity levels
 - Persistent file logging (`logs/pipeline.log`)
 - Project-root-based path resolution
 - Modular logger configuration (`src/logger.py`)
 
-### ✅ Temporal Train-Validation Split
+## Temporal Train–Validation Split
 
 - Deterministic time-based split implemented in `src/splitting.py`
 - Split date controlled via configuration file
 - Protection against temporal data leakage
-- Logging of train and validation time ranges
+- Logging of training and validation periods
 
 ---
 
+# Pipeline Architecture
 
-## Engineering Principles Applied
+The pipeline follows a modular architecture designed to enforce data contracts, prevent temporal leakage, and ensure reproducible execution.
 
-- Single Responsibility Principle
-- Modular project architecture
-- Explicit data contracts
-- Observability through logging
-- Deterministic execution
-- Separation between exploration and pipeline logic
+CLI Execution  
+`python main.py --config config/pipeline_config.yaml`
 
----
+            ┌─────────────────┐
+            │     main.py     │
+            │ Pipeline Orchestration │
+            └────────┬────────┘
+                     │
+                     ▼
+            ┌─────────────────┐
+            │ config_loader.py │
+            │ Load YAML Config │
+            └────────┬────────┘
+                     │
+                     ▼
+            ┌─────────────────┐
+            │   ingestion.py   │
+            │ Controlled Data  │
+            │ Loading          │
+            └────────┬────────┘
+                     │
+                     ▼
+            ┌─────────────────┐
+            │  validation.py   │
+            │ Data Contract    │
+            │ Enforcement      │
+            └────────┬────────┘
+                     │
+                     ▼
+            ┌─────────────────┐
+            │  splitting.py    │
+            │ Temporal Split   │
+            │ (Leakage Safe)   │
+            └────────┬────────┘
+                     │
+          ┌──────────┴──────────┐
+          ▼                     ▼
+   ┌───────────────┐   ┌───────────────┐
+   │   train_df    │   │ validation_df │
+   └───────────────┘   └───────────────┘
 
-## Engineering Insights & Challenges
+Each module has a clearly defined responsibility:
 
-### 1. Dtype Inconsistency (StateHoliday)
-
-Issue:
-Pandas raised a DtypeWarning due to mixed types in the `StateHoliday` column.  
-Validation failed because the expected dtype did not match the inferred dtype.
-
-Resolution:
-- Explicit dtype specification during CSV ingestion.
-- Converted `StateHoliday` to categorical type.
-- Updated the data contract accordingly.
-
-Lesson:
-Data contracts must reflect semantic meaning, not only default technical behavior.
-
----
-
-### 2. Logging Path Resolution
-
-Issue:
-Logs were being generated inside the notebook directory due to relative path resolution.
-
-Resolution:
-- Implemented root-path resolution using `__file__`.
-- Ensured logs are consistently saved at project root level.
-
-Lesson:
-Production systems must not rely on execution context.
-
----
-
-### 3. Module Reloading in Jupyter
-
-Issue:
-Changes to validation modules were not reflected immediately.
-
-Resolution:
-- Used `importlib.reload()` during development.
-- Reinforced the need for a proper `main.py` entry point.
-
-Lesson:
-Notebooks are exploratory tools, not production execution engines.
+- **main.py** — CLI entry point and pipeline orchestration  
+- **config_loader.py** — configuration management  
+- **ingestion.py** — controlled dataset loading  
+- **validation.py** — data contract enforcement  
+- **splitting.py** — deterministic temporal split  
+- **logger.py** — centralized logging system  
 
 ---
 
-### ✅ Ingestion Layer
+# Data Pipeline Guarantees
 
-- Dedicated `src/ingestion.py` module
-- Explicit dtype enforcement during CSV loading
-- Deterministic datetime parsing
-- Immediate schema validation after load
-- CLI-executable via `main.py`
-- Fail-fast behavior on invalid input
+This pipeline enforces a set of guarantees designed to improve reliability and prevent common issues in data workflows.
 
----
+**Schema Integrity**
 
-## Pipeline Execution
+- Required columns are validated before processing  
+- Dataset structure must match the expected schema  
 
-The project includes a CLI-ready pipeline entry point implemented in `main.py`.
+**Type Consistency**
 
-This allows the entire data ingestion and validation workflow to be executed outside notebooks in a deterministic way.
+- Critical columns enforce explicit dtype definitions  
+- Prevents silent errors caused by mixed or inferred types  
 
-Example execution:
+**Granularity Enforcement**
 
-python main.py --data-path data/raw/train.csv
+- Ensures uniqueness of the `Store + Date` key  
+- Prevents duplicated observations and aggregation errors  
 
-Key characteristics of the entry point:
+**Temporal Integrity**
 
-- CLI interface implemented with `argparse`
-- Runtime configuration through command line arguments
-- Structured logging during execution
-- Automatic dataset validation during ingestion
-- Fail-fast behavior when data contracts are violated
+- Train and validation sets are strictly separated in time  
+- Prevents data leakage in forecasting tasks  
 
-This design prepares the pipeline for integration with orchestration systems such as Airflow, Docker, or CI/CD environments.
+**Fail-Fast Validation**
 
-## Pipeline Architecture
+- Pipeline execution stops immediately when validation fails  
+- Avoids propagation of corrupted datasets  
 
-The current pipeline execution flow is:
+**Reproducible Execution**
 
-main.py
-   ↓
-config_loader.py
-   ↓
-ingestion.py
-   ↓
-validation.py
-   ↓
-splitting.py
+- Configuration is externalized via YAML  
+- Pipeline behavior is deterministic across runs  
 
-Each module has a well-defined responsibility:
-
-- **main.py** — CLI entry point and pipeline orchestration
-- **config_loader.py** — external configuration management
-- **ingestion.py** — controlled dataset loading
-- **validation.py** — data contract enforcement
-- **splitting.py** — deterministic temporal train-validation split
-- **logger.py** — structured logging system
-
-This layered architecture ensures modularity, observability, and deterministic execution.
+These guarantees ensure the dataset entering the modeling stage is **consistent, validated, and leakage-safe**.
 
 ---
 
-## Project Structure
+# Engineering Principles Applied
 
+- Single Responsibility Principle  
+- Modular architecture  
+- Explicit data contracts  
+- Observability through structured logging  
+- Deterministic pipeline execution  
+- Separation between exploration and production code  
+
+---
+
+# Reproducibility & Design Choices
+
+Several design decisions were made to ensure the pipeline is **fully reproducible**:
+
+- Pipeline parameters are externalized through **YAML configuration**
+- Execution does not depend on notebooks
+- Data validation runs automatically during ingestion
+- Temporal splits are deterministic and configurable
+- Logging captures the entire pipeline execution flow
+
+This approach ensures that pipeline runs are **repeatable and auditable**.
+
+---
+
+# Engineering Insights & Challenges
+
+## Dtype Inconsistency (`StateHoliday`)
+
+**Issue**
+
+Pandas raised a `DtypeWarning` due to mixed types in the `StateHoliday` column.
+
+**Resolution**
+
+- Explicit dtype specification during CSV ingestion
+- Conversion of `StateHoliday` to categorical type
+- Alignment of validation rules with the data contract
+
+**Lesson**
+
+Data contracts should represent **semantic meaning**, not only inferred technical types.
+
+---
+
+## Logging Path Resolution
+
+**Issue**
+
+Logs were written relative to the notebook execution path.
+
+**Resolution**
+
+- Implemented root-path resolution using `__file__`
+- Standardized logs in the project-level `logs/` directory
+
+**Lesson**
+
+Production pipelines must not depend on execution context.
+
+---
+
+## Module Reloading During Development
+
+**Issue**
+
+Changes in validation modules were not reflected immediately in notebooks.
+
+**Resolution**
+
+- Used `importlib.reload()` during development
+- Reinforced `main.py` as the official execution entry point
+
+**Lesson**
+
+Notebooks are exploratory tools, not reliable execution environments.
+
+---
+
+# Pipeline Execution
+
+Run the pipeline using the configuration file: `python main.py --config config/pipeline_config.yaml`
+
+Example output:
+Pipeline execution started
+Starting data ingestion
+Dataset validation passed
+Temporal train-validation split completed
+Pipeline execution completed successfully
+
+This execution model prepares the pipeline for integration with:
+
+- Airflow  
+- Docker  
+- CI/CD pipelines  
+- scheduled batch jobs  
+
+---
+
+# Project Structure
 ```
-
 pharma-demand-forecast/
 │
 ├── config/
-│   └── pipeline_config.yaml
+│ └── pipeline_config.yaml
 │
 ├── data/
-│   ├── raw/
+│ └── raw/
 │
 ├── docs/
-│   ├── engineering_decisions.md
-│   └── data_dictionary.md
+│ ├── engineering_decisions.md
+│ └── data_dictionary.md
 │
 ├── logs/
 │
 ├── notebooks/
 │
 ├── src/
-│   ├── ingestion.py
-│   ├── validation.py
-│   ├── splitting.py
-│   ├── config_loader.py
-│   └── logger.py
+│ ├── ingestion.py
+│ ├── validation.py
+│ ├── splitting.py
+│ ├── config_loader.py
+│ └── logger.py
 │
 ├── main.py
 ├── requirements.txt
 └── README.md
-
 ```
 
 ---
 
-## Quick Start
+# Planned Pipeline Evolution
+
+Next stages of the project include:
+
+- Feature engineering layer (`src/processing.py`)
+- Lag and rolling window features
+- Forecasting model training pipeline
+- Forecast evaluation metrics
+- Backtesting workflows for time series validation
+
+---
+
+# Quick Start
+
+Repository:
+
+https://github.com/Luis-Mussalem/pharma-demand-forecast
 
 Clone the repository and run the pipeline:
+git clone https://github.com/Luis-Mussalem/pharma-demand-forecast.git
 
-git clone https://github.com/<your-user>/pharma-demand-forecast.git
 cd pharma-demand-forecast
 
-python main.py --data-path data/raw/train.csv
+python main.py --config config/pipeline_config.yaml
 
 ---
 
-## Next Steps
-
----
-
-## Author
+# Author
 
 Luis Mussalem
