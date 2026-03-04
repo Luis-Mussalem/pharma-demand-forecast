@@ -35,28 +35,31 @@ def create_calendar_features(df: pd.DataFrame) -> pd.DataFrame:
 
     return df
 
+def create_lag_features(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Create lag features for the Sales variable grouped by Store.
+    """
+
+    logger.info("Generating lag features.")
+
+    df = df.copy()
+
+    df = df.sort_values(["Store", "Date"])
+
+    df["lag_sales_1"] = df.groupby("Store")["Sales"].shift(1)
+    df["lag_sales_7"] = df.groupby("Store")["Sales"].shift(7)
+
+    logger.info("Lag features generated successfully.")
+
+    return df
 
 def run_feature_pipeline(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Execute the full feature engineering pipeline.
-
-    This function orchestrates all feature transformations in the correct order.
-
-    Parameters
-    ----------
-    df : pd.DataFrame
-        Input dataset.
-
-    Returns
-    -------
-    pd.DataFrame
-        Dataset with engineered features.
-    """
 
     logger.info("Starting feature engineering pipeline.")
 
-    # Calendar features
     df = create_calendar_features(df)
+
+    df = create_lag_features(df)
 
     logger.info("Feature engineering pipeline completed successfully.")
 
