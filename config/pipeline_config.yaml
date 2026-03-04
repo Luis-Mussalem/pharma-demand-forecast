@@ -1,0 +1,10 @@
+data:
+  raw_data_path: data/raw/train.csv
+
+split:
+  method: date
+  split_date: "2015-04-30"
+  validation_days: 90
+
+logging:
+  level: INFO

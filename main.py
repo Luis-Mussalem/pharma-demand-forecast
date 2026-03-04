@@ -4,6 +4,7 @@ import sys
 
 from src.ingestion import load_data
 from src.logger import get_logger
+from src.config_loader import load_config
 
 def parse_arguments() -> argparse.Namespace:
     """
@@ -15,10 +16,10 @@ def parse_arguments() -> argparse.Namespace:
     )
 
     parser.add_argument(
-        "--data-path",
-        type=str,
-        required=True,
-        help="Path to raw input dataset (CSV)"
+    "--config",
+    type=str,
+    required=True,
+    help="Path to pipeline configuration YAML file."
     )
 
     parser.add_argument(
@@ -57,18 +58,22 @@ def configure_logger(log_level: str) :
 def main():
 
     args = parse_arguments()
-    
+
+    config_path = Path(args.config).resolve()
+    config = load_config(config_path)
+
     logger = configure_logger(args.log_level)
 
     logger.info("Pipeline execution started.")
     logger.debug(f"Parsed arguments: {args}")
 
     try:
-        data_path = Path(args.data_path).resolve()
+
+        data_path = Path(config["data"]["raw_data_path"]).resolve()
 
         if not data_path.exists():
             raise FileNotFoundError(f"Data file not found at {data_path}")
-        
+
         df = load_data(data_path)
 
         logger.info(f"Dataset successfully loaded. Shape: {df.shape}.")

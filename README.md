@@ -179,29 +179,23 @@ This layered architecture ensures modularity, observability, and deterministic e
 
 ```
 
-pharma-demand-forecast/
+pharma-demand-forecast
 │
-├── data/
-│   ├── raw/
-│   ├── interim/
-│   └── processed/
+├── config
+│   └── pipeline_config.yaml
 │
-├── docs/
-│   ├── engineering_decisions.md
-│   └── data_dictionary.md
-│
-├── logs/
-│
-├── notebooks/
-│   └── exploration.ipynb
-│
-├── src/
+├── src
 │   ├── ingestion.py
 │   ├── validation.py
-│   └── logger.py
+│   ├── logger.py
+│   ├── config_loader.py
 │
-├── main.py        # CLI pipeline entry point
+├── data
+├── logs
+├── notebooks
 │
+├── main.py
+├── requirements.txt
 └── README.md
 
 ```
