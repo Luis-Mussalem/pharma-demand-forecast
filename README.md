@@ -121,6 +121,7 @@ The pipeline follows a modular architecture designed to enforce data contracts, 
 CLI Execution  
 `python main.py --config config/pipeline_config.yaml`
 
+```
             ┌─────────────────┐
             │     main.py     │
             │ Pipeline Orchestration │
@@ -158,6 +159,7 @@ CLI Execution
    ┌───────────────┐   ┌───────────────┐
    │   train_df    │   │ validation_df │
    └───────────────┘   └───────────────┘
+```
 
 Each module has a clearly defined responsibility:
 
