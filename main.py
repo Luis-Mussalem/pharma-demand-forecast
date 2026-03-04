@@ -2,9 +2,11 @@ import argparse
 from pathlib import Path
 import sys
 
+from src import logger
 from src.ingestion import load_data
 from src.logger import get_logger
 from src.config_loader import load_config
+from src.splitting import temporal_train_validation_split
 
 def parse_arguments() -> argparse.Namespace:
     """
@@ -77,6 +79,14 @@ def main():
         df = load_data(data_path)
 
         logger.info(f"Dataset successfully loaded. Shape: {df.shape}.")
+
+        train_df, validation_df = temporal_train_validation_split(
+            df, split_date=config["split"]["split_date"]
+        )
+
+        logger.info("Temporal split completed successfully.")
+        logger.info(f"Train dataset shape: {train_df.shape}")
+        logger.info(f"Validation dataset shape: {validation_df.shape}")
 
         if args.save_processed:
             if args.output_path is None:

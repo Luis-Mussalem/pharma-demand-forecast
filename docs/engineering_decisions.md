@@ -199,3 +199,38 @@ Implemented a CLI-ready `main.py` using `argparse`.
 Production pipelines must not rely on hardcoded paths or execution context.
 CLI configuration ensures reproducibility and portability.
 
+## Day 3 — Temporal Train-Validation Split
+
+### Decision
+
+Implement deterministic temporal splitting before feature engineering.
+
+### Why
+
+Random dataset splits introduce temporal leakage in forecasting problems.
+Models may learn patterns from the future, producing unrealistic performance.
+
+A strict chronological split prevents this issue.
+
+### Implementation
+
+A dedicated module (`src/splitting.py`) performs:
+
+- explicit ordering by date
+- deterministic split based on configuration
+- validation checks preventing overlap
+- structured logging of split periods
+
+### Configuration
+
+The split date is defined in the pipeline configuration:
+
+split:
+  method: date
+  split_date: "2015-04-30"
+
+### Engineering Insight
+
+Temporal integrity must be enforced before any feature engineering step,
+especially when lag or rolling-window features are introduced.
+

@@ -41,6 +41,27 @@ All transformations and validations respect this aggregation level to prevent in
 
 ## Current Implementation Status
 
+### ✅ CLI Pipeline Entry Point
+
+- Executable pipeline through `main.py`
+- CLI interface implemented with `argparse`
+- Pipeline execution configured via `--config`
+- Deterministic execution independent of notebook environments
+
+### ✅ External Pipeline Configuration
+
+- Pipeline parameters externalized through `config/pipeline_config.yaml`
+- Centralized configuration management
+- Enables reproducible experiments and environment-independent execution
+- Configuration loaded via `src/config_loader.py`
+
+### ✅ Data Ingestion Layer
+
+- Dedicated ingestion module (`src/ingestion.py`)
+- Controlled CSV loading with explicit dtype definitions
+- Explicit datetime parsing for temporal fields
+- Integration with validation layer
+
 ### ✅ Data Contract & Validation Layer
 
 - Expected schema enforcement
@@ -55,14 +76,15 @@ All transformations and validations respect this aggregation level to prevent in
 - Project-root-based path resolution
 - Modular logger configuration (`src/logger.py`)
 
-### ✅ Controlled Data Loading
+### ✅ Temporal Train-Validation Split
 
-- Explicit dtype definition for `StateHoliday`
-- Conversion of `StateHoliday` to categorical type
-- Explicit datetime conversion for `Date`
-- `low_memory=False` to avoid mixed-type warnings
+- Deterministic time-based split implemented in `src/splitting.py`
+- Split date controlled via configuration file
+- Protection against temporal data leakage
+- Logging of train and validation time ranges
 
 ---
+
 
 ## Engineering Principles Applied
 
@@ -158,18 +180,22 @@ The current pipeline execution flow is:
 
 main.py
    ↓
+config_loader.py
+   ↓
 ingestion.py
    ↓
 validation.py
    ↓
-logger.py
+splitting.py
 
-Each module has a clearly defined responsibility:
+Each module has a well-defined responsibility:
 
 - **main.py** — CLI entry point and pipeline orchestration
-- **ingestion.py** — controlled dataset loading with dtype enforcement
-- **validation.py** — data contract enforcement (schema, types, granularity)
-- **logger.py** — centralized structured logging system
+- **config_loader.py** — external configuration management
+- **ingestion.py** — controlled dataset loading
+- **validation.py** — data contract enforcement
+- **splitting.py** — deterministic temporal train-validation split
+- **logger.py** — structured logging system
 
 This layered architecture ensures modularity, observability, and deterministic execution.
 
@@ -179,20 +205,28 @@ This layered architecture ensures modularity, observability, and deterministic e
 
 ```
 
-pharma-demand-forecast
+pharma-demand-forecast/
 │
-├── config
+├── config/
 │   └── pipeline_config.yaml
 │
-├── src
+├── data/
+│   ├── raw/
+│
+├── docs/
+│   ├── engineering_decisions.md
+│   └── data_dictionary.md
+│
+├── logs/
+│
+├── notebooks/
+│
+├── src/
 │   ├── ingestion.py
 │   ├── validation.py
-│   ├── logger.py
+│   ├── splitting.py
 │   ├── config_loader.py
-│
-├── data
-├── logs
-├── notebooks
+│   └── logger.py
 │
 ├── main.py
 ├── requirements.txt
@@ -215,10 +249,7 @@ python main.py --data-path data/raw/train.csv
 
 ## Next Steps
 
-- Implement temporal train-validation split layer
-- Introduce transformation/processing module
-- Prepare feature engineering isolation
-- Implement time-aware modeling architecture
+---
 
 ## Author
 
