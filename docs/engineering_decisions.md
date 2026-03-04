@@ -3,6 +3,7 @@
 This document details technical decisions, issues encountered, and architectural reasoning throughout the development process.
 
 ---
+## Days 1 & 2
 
 ## 1. Data Contract Implementation
 
@@ -150,3 +151,22 @@ The long-term architecture will include:
 
 The current stage establishes the foundation required for reliable machine learning workflows.
 
+## Day 3 — Ingestion Layer Implementation
+
+### Decision
+Created a dedicated ingestion module responsible for:
+- Explicit dtype control during CSV loading
+- Deterministic datetime parsing
+- Immediate dataset validation
+- Structured logging integration
+
+### Rationale
+Separating ingestion from exploration ensures:
+- Single Responsibility Principle
+- Reproducible execution
+- Prevention of schema drift
+- Production-ready architecture
+
+### Improvements
+- Logger refactored to idempotent configuration
+- Robust dtype comparison using is_dtype_equal

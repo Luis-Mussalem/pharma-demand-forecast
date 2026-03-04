@@ -1,7 +1,8 @@
 import pandas as pd
+from pandas.api.types import is_dtype_equal
+from src.logger import get_logger
 
-from src.logger import setup_logger
-logger = setup_logger()
+logger = get_logger()
 
 EXPECTED_COLUMNS = [
     "Store",
@@ -57,13 +58,13 @@ def validate_dtypes(df: pd.DataFrame) -> None:
         if column == "Date":
             continue
 
-        actual_dtype = str(df[column].dtype)
+        actual_dtype = df[column].dtype
+        expected_dtype_obj = pd.Series([], dtype=expected_dtype).dtype
 
-        if actual_dtype != expected_dtype:
+        if not is_dtype_equal(actual_dtype, expected_dtype_obj):
             raise TypeError(
-                f"Column '{column}' has dtype '{actual_dtype}' but expected '{expected_dtype}'"
+                f"Column '{column}' has dtype '{actual_dtype}' but expected '{expected_dtype_obj}'"
             )
-
 
 def validate_granularity(df: pd.DataFrame) -> None:
     """
