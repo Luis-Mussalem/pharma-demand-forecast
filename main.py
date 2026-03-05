@@ -8,6 +8,7 @@ from src.logger import get_logger
 from src.config_loader import load_config
 from src.splitting import temporal_train_validation_split
 from src.processing import run_feature_pipeline, generate_validation_features
+from src.training import train_model
 
 def parse_arguments() -> argparse.Namespace:
     """
@@ -97,6 +98,10 @@ def main():
             )
 
         logger.info("Feature engineering completed successfully.")
+
+        model = train_model(train_df)
+
+        logger.info("Baseline model trained successfully.")
 
         if args.save_processed:
             if args.output_path is None:

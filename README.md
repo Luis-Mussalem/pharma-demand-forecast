@@ -70,63 +70,80 @@ Granularity is validated as part of the **data contract layer**.
 
 # Current Implementation Status
 
-## CLI Pipeline Entry Point
+### ✅ CLI Pipeline Entry Point
 
 - Executable pipeline through `main.py`
 - CLI interface implemented with `argparse`
 - Pipeline execution configured via `--config`
 - Deterministic execution independent of notebook environments
 
-## External Pipeline Configuration
+### ✅ External Pipeline Configuration
 
 - Pipeline parameters externalized through `config/pipeline_config.yaml`
 - Centralized configuration management
 - Enables reproducible experiments and environment-independent execution
 - Configuration loaded via `src/config_loader.py`
 
-## Data Ingestion Layer
+### ✅ Data Ingestion Layer
 
 - Dedicated ingestion module (`src/ingestion.py`)
 - Controlled CSV loading with explicit dtype definitions
 - Explicit datetime parsing for temporal fields
-- Immediate integration with validation layer
+- Integration with validation layer
 
-## Data Contract & Validation Layer
+### ✅ Data Contract & Validation Layer
 
 - Expected schema enforcement
 - Explicit dtype validation
-- Granularity validation (`Store + Date` uniqueness)
+- Granularity validation (Store + Date uniqueness)
 - Fail-fast behavior on invalid datasets
 
-## Structured Logging System
+### ✅ Structured Logging System
 
 - Console logging with timestamps and severity levels
 - Persistent file logging (`logs/pipeline.log`)
 - Project-root-based path resolution
 - Modular logger configuration (`src/logger.py`)
 
-## Temporal Train–Validation Split
+### ✅ Temporal Train–Validation Split
 
 - Deterministic time-based split implemented in `src/splitting.py`
 - Split date controlled via configuration file
 - Protection against temporal data leakage
 - Logging of training and validation periods
 
-## Feature Engineering Pipeline
+### ✅ Feature Engineering Pipeline
 
 - Dedicated transformation module (`src/processing.py`)
 - Modular feature pipeline architecture
-- Calendar-based feature generation
-- Lag-based features grouped by store
-- Rolling window statistics for historical sales patterns
+- Calendar-based features
+- Lag features grouped by store
+- Rolling window statistics
 
-## Leakage-Safe Feature Generation
+### ✅ Leakage-Safe Validation Feature Generation
 
-Validation features are generated using historical context from the training dataset.
+- Validation features generated using historical context from training data
+- Preserves lag and rolling signals across temporal boundaries
+- Prevents feature loss at split transition
 
-This prevents loss of lag and rolling window information at the temporal boundary between training and validation sets.
+### ✅ Training Layer
 
-The pipeline concatenates recent training observations with the validation dataset during feature generation and removes them afterward.
+- Dedicated training module (`src/training.py`)
+- Explicit separation between feature matrix and target variable
+- Baseline model training with `RandomForestRegressor`
+- Modular training pipeline
+
+### ✅ Training Readiness Layer
+
+- Missing-value removal before model fit
+- Logging of removed rows
+- Deterministic dataset preparation for training
+
+### ✅ Categorical Encoding for Model Compatibility
+
+- Automatic detection of categorical columns
+- Encoding applied before model fitting
+- Baseline compatibility with tree-based models
 
 ---
 
