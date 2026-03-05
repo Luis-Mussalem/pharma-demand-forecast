@@ -429,3 +429,28 @@ For this reason, the evaluation module reuses:
 - `encode_categorical_features`
 
 from the training layer.
+
+## Day 4 — Artifact Persistence Layer
+
+### Decision
+
+Implemented a dedicated artifact persistence module (`src/artifacts.py`) to store model and evaluation outputs.
+
+### Rationale
+
+Pipeline outputs must persist beyond runtime execution.
+
+Saving artifacts ensures:
+
+- reproducibility
+- experiment traceability
+- future deployment readiness
+
+### Artifacts Generated
+
+- `model.pkl`
+- `metrics.json`
+
+### Engineering Insight
+
+Separating artifact persistence from training logic preserves modularity and supports future integration with experiment tracking systems.

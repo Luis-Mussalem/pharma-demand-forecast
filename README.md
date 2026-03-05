@@ -161,6 +161,13 @@ Current baseline metrics:
 
 This baseline establishes the first reproducible benchmark for future model iterations.
 
+### ✅ Artifact Persistence Layer
+
+- Trained model saved as `artifacts/model.pkl`
+- Evaluation metrics saved as `artifacts/metrics.json`
+- Automatic artifact directory creation
+- Reproducible pipeline outputs
+
 ---
 
 # Pipeline Architecture
@@ -225,6 +232,12 @@ CLI Execution
                 ┌─────────────────────────┐
                 │ Baseline Performance    │
                 │ reproducible benchmark  │
+                └─────────────────────────┘
+                             │
+                             ▼
+                ┌─────────────────────────┐
+                │      artifacts.py       │
+                │    model and metrics    │
                 └─────────────────────────┘
 ```
 

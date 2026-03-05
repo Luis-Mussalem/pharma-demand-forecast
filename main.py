@@ -1,6 +1,9 @@
 import argparse
 from pathlib import Path
 import sys
+from xml.parsers.expat import model
+
+from sklearn import metrics
 
 from src import logger
 from src.ingestion import load_data
@@ -10,6 +13,7 @@ from src.splitting import temporal_train_validation_split
 from src.processing import run_feature_pipeline, generate_validation_features
 from src.training import train_model
 from src.evaluation import evaluate_model
+from src.artifacts import save_model, save_metrics
 
 def parse_arguments() -> argparse.Namespace:
     """
@@ -106,6 +110,11 @@ def main():
 
         metrics = evaluate_model(model, validation_df)
         logger.info(f"Model evaluation metrics: {metrics}")
+
+        artifacts_dir = Path("artifacts")
+
+        save_model(model, artifacts_dir)
+        save_metrics(metrics, artifacts_dir)
 
         if args.save_processed:
             if args.output_path is None:
