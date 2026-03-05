@@ -145,6 +145,22 @@ Granularity is validated as part of the **data contract layer**.
 - Encoding applied before model fitting
 - Baseline compatibility with tree-based models
 
+### ✅ Model Evaluation Layer
+
+- Dedicated evaluation module (`src/evaluation.py`)
+- Validation predictions generated from trained baseline model
+- MAE and RMSE calculated on temporal validation set
+- Consistent preprocessing between training and validation data
+
+### ✅ Baseline Performance Tracking
+
+Current baseline metrics:
+
+- **MAE:** 460.82  
+- **RMSE:** 714.98  
+
+This baseline establishes the first reproducible benchmark for future model iterations.
+
 ---
 
 # Pipeline Architecture
@@ -201,7 +217,14 @@ CLI Execution
                              │
                              ▼
                 ┌─────────────────────────┐
-                │ Trained Baseline Model  │
+                │      evaluation.py      │
+                │ MAE + RMSE validation   │
+                └────────────┬────────────┘
+                             │
+                             ▼
+                ┌─────────────────────────┐
+                │ Baseline Performance    │
+                │ reproducible benchmark  │
                 └─────────────────────────┘
 ```
 

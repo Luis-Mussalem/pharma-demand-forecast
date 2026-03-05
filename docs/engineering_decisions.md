@@ -374,3 +374,58 @@ A `RandomForestRegressor` baseline was chosen because:
 ### Engineering Insight
 
 Separating model preparation from feature generation mirrors production ML pipelines, where feature stores and model training layers evolve independently.
+
+## Day 4 — Evaluation Layer
+
+### Decision
+
+Implemented a dedicated evaluation module (`src/evaluation.py`) to measure baseline model performance on the temporal validation set.
+
+### Rationale
+
+Training alone is insufficient in a forecasting pipeline.
+
+A dedicated evaluation layer ensures:
+
+- reproducible validation metrics
+- explicit baseline tracking
+- comparability across future models
+
+### Implementation
+
+The evaluation module includes:
+
+- validation data preparation
+- feature extraction
+- categorical encoding
+- prediction generation
+- metric calculation
+
+### Metrics Used
+
+#### MAE (Mean Absolute Error)
+
+Measures average absolute forecasting error.
+
+#### RMSE (Root Mean Squared Error)
+
+Penalizes larger forecasting errors more heavily.
+
+### Baseline Result
+
+- MAE: 460.82
+- RMSE: 714.98
+
+### Engineering Insight
+
+Validation preprocessing must mirror training preprocessing exactly.
+
+Any mismatch between train and validation transformations invalidates metric interpretation.
+
+For this reason, the evaluation module reuses:
+
+- `prepare_training_data`
+- `prepare_features`
+- `encode_categorical_features`
+
+from the training layer.

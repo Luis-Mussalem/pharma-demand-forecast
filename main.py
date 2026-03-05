@@ -9,6 +9,7 @@ from src.config_loader import load_config
 from src.splitting import temporal_train_validation_split
 from src.processing import run_feature_pipeline, generate_validation_features
 from src.training import train_model
+from src.evaluation import evaluate_model
 
 def parse_arguments() -> argparse.Namespace:
     """
@@ -102,6 +103,9 @@ def main():
         model = train_model(train_df)
 
         logger.info("Baseline model trained successfully.")
+
+        metrics = evaluate_model(model, validation_df)
+        logger.info(f"Model evaluation metrics: {metrics}")
 
         if args.save_processed:
             if args.output_path is None:

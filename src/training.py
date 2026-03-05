@@ -89,6 +89,8 @@ def train_model(train_df: pd.DataFrame):
         n_jobs=-1
     )
 
+    logger.info("Training model. This may take a moment...")
+    
     model.fit(X_train, y_train)
 
     logger.info("Model training completed successfully.")
