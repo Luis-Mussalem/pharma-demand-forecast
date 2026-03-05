@@ -84,9 +84,11 @@ def train_model(train_df: pd.DataFrame):
     X_train = encode_categorical_features(X_train)
 
     model = RandomForestRegressor(
-        n_estimators=100,
-        random_state=42,
-        n_jobs=-1
+    n_estimators=20,
+    max_depth=12,
+    min_samples_leaf=20,
+    random_state=42,
+    n_jobs=-1
     )
 
     logger.info("Training model. This may take a moment...")
