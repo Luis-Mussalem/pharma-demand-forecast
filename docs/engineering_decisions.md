@@ -454,3 +454,14 @@ Saving artifacts ensures:
 ### Engineering Insight
 
 Separating artifact persistence from training logic preserves modularity and supports future integration with experiment tracking systems.
+
+### Model Artifact Optimization
+
+The initial baseline model generated an excessively large artifact (~6 GB), which was operationally impractical.
+
+To improve persistence efficiency, tree complexity was constrained using:
+
+- `max_depth=12`
+- `min_samples_leaf=20`
+
+This reduced artifact size to ~6 MB while preserving baseline reproducibility.
