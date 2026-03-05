@@ -181,22 +181,28 @@ CLI Execution
                              ▼
                 ┌─────────────────────────┐
                 │       splitting.py      │
-                │   Temporal Train Split  │
+                │ Temporal Train Split    │
+                └────────────┬────────────┘
+                             │
+               ┌─────────────┴─────────────┐
+               ▼                           ▼
+  ┌─────────────────────┐     ┌──────────────────────────┐
+  │   processing.py     │     │      processing.py       │
+  │ train feature set   │     │ validation with history  │
+  └──────────┬──────────┘     └────────────┬─────────────┘
+             │                             │
+             └─────────────┬───────────────┘
+                           ▼
+                ┌─────────────────────────┐
+                │       training.py       │
+                │ readiness + encoding    │
+                │ baseline model fit      │
                 └────────────┬────────────┘
                              │
                              ▼
                 ┌─────────────────────────┐
-                │       processing.py     │
-                │    Feature Engineering  │
-                │ (calendar, lag, rolling)│
-                └────────────┬────────────┘
-                             │
-                 ┌───────────┴───────────┐
-                 ▼                       ▼
-          ┌───────────────┐       ┌───────────────┐
-          │   train_df    │       │ validation_df │
-          │ feature set   │       │ feature set   │
-          └───────────────┘       └───────────────┘
+                │ Trained Baseline Model  │
+                └─────────────────────────┘
 ```
 
 Each module has a clearly defined responsibility:
