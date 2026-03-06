@@ -9,10 +9,10 @@ from src.splitting import temporal_train_validation_split
 from src.training import train_model
 from src.evaluation import evaluate_model
 from src.artifacts import save_model, save_metrics
-from src.feature_registry import run_feature_pipeline
 from src.feature_registry import (
     run_feature_pipeline,
     generate_validation_features,
+    FEATURE_REGISTRY,
 )
 
 def parse_arguments() -> argparse.Namespace:
@@ -96,8 +96,14 @@ def main():
         logger.info(f"Validation dataset shape: {validation_df.shape}")
 
         feature_config = config["features"]
+        features_used = [
+            feature_name
+            for feature_name in FEATURE_REGISTRY
+            if feature_config.get(feature_name, False)
+        ]
 
         train_df = run_feature_pipeline(train_df, feature_config)
+        
         validation_df = generate_validation_features(
             train_df,
             validation_df,
@@ -111,6 +117,8 @@ def main():
         logger.info("Baseline model trained successfully.")
 
         metrics = evaluate_model(model, validation_df)
+        metrics["features_used"] = features_used
+
         logger.info(f"Model evaluation metrics: {metrics}")
 
         artifacts_dir = Path("artifacts")

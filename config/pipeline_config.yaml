@@ -12,4 +12,4 @@ logging:
 features:
   calendar: true
   lag: true
-  rolling: false
+  rolling: true
