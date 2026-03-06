@@ -14,12 +14,12 @@ EXCLUDED_COLUMNS = [
     "Date"
 ]
 
-def prepare_training_data(df: pd.DataFrame) -> pd.DataFrame:
+def prepare_modeling_data(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Prepare dataset for model training by removing rows with missing values.
+    Prepare dataset for model by removing rows with missing values.
     """
 
-    logger.info("Preparing training dataset for modeling.")
+    logger.info("Preparing dataset for modeling.")
 
     initial_shape = df.shape
 
@@ -30,7 +30,7 @@ def prepare_training_data(df: pd.DataFrame) -> pd.DataFrame:
     removed_rows = initial_shape[0] - final_shape[0]
 
     logger.info(f"Rows removed due to missing values: {removed_rows}")
-    logger.info(f"Training dataset ready. Shape: {final_shape}")
+    logger.info(f"Modeling dataset ready. Shape: {final_shape}")
 
     return df
 
@@ -77,7 +77,7 @@ def train_model(train_df: pd.DataFrame):
 
     logger.info("Starting model training.")
 
-    train_df = prepare_training_data(train_df)
+    train_df = prepare_modeling_data(train_df)
     
     X_train, y_train = prepare_features(train_df)
 

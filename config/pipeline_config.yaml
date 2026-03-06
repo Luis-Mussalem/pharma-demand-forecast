@@ -8,3 +8,8 @@ split:
 
 logging:
   level: INFO
+
+features:
+  calendar: true
+  lag: true
+  rolling: false

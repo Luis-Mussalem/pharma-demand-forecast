@@ -1,19 +1,19 @@
 import argparse
 from pathlib import Path
 import sys
-from xml.parsers.expat import model
 
-from sklearn import metrics
-
-from src import logger
 from src.ingestion import load_data
 from src.logger import get_logger
 from src.config_loader import load_config
 from src.splitting import temporal_train_validation_split
-from src.processing import run_feature_pipeline, generate_validation_features
 from src.training import train_model
 from src.evaluation import evaluate_model
 from src.artifacts import save_model, save_metrics
+from src.feature_registry import run_feature_pipeline
+from src.feature_registry import (
+    run_feature_pipeline,
+    generate_validation_features,
+)
 
 def parse_arguments() -> argparse.Namespace:
     """
@@ -95,12 +95,14 @@ def main():
         logger.info(f"Train dataset shape: {train_df.shape}")
         logger.info(f"Validation dataset shape: {validation_df.shape}")
 
-        train_df = run_feature_pipeline(train_df)
+        feature_config = config["features"]
+
+        train_df = run_feature_pipeline(train_df, feature_config)
         validation_df = generate_validation_features(
             train_df,
             validation_df,
-            max_lag=7
-            )
+            feature_config
+        )
 
         logger.info("Feature engineering completed successfully.")
 

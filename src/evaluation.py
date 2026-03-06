@@ -6,7 +6,7 @@ from tornado.locale import get
 
 from src.logger import get_logger
 from src.training import (
-    prepare_training_data,
+    prepare_modeling_data,
     prepare_features,
     encode_categorical_features
 )
@@ -20,7 +20,7 @@ def evaluate_model(model, validation_df: pd.DataFrame) -> dict:
 
     logger.info("Starting model evaluation.")
 
-    validation_df = prepare_training_data(validation_df)
+    validation_df = prepare_modeling_data(validation_df)
 
     X_val, y_val = prepare_features(validation_df)
 
