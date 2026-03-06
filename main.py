@@ -8,7 +8,11 @@ from src.config_loader import load_config
 from src.splitting import temporal_train_validation_split
 from src.training import train_model
 from src.evaluation import evaluate_model
-from src.artifacts import save_model, save_metrics
+from src.artifacts import (
+    save_model, 
+    save_metrics,
+    generate_timestamp
+)
 from src.feature_registry import (
     run_feature_pipeline,
     generate_validation_features,
@@ -123,8 +127,9 @@ def main():
 
         artifacts_dir = Path("artifacts")
 
-        save_model(model, artifacts_dir)
-        save_metrics(metrics, artifacts_dir)
+        artifact_timestamp = generate_timestamp()
+        save_model(model, artifacts_dir, artifact_timestamp)
+        save_metrics(metrics, artifacts_dir, artifact_timestamp)
 
         if args.save_processed:
             if args.output_path is None:
