@@ -154,19 +154,53 @@ Granularity is validated as part of the **data contract layer**.
 
 ### ✅ Baseline Performance Tracking
 
-Current baseline metrics:
+Current baseline metrics (RandomForest + calendar + lag + rolling):
 
-- **MAE:** 460.82  
-- **RMSE:** 714.98  
+- **MAE:** 513.96  
+- **RMSE:** 802.35  
 
-This baseline establishes the first reproducible benchmark for future model iterations.
+Feature ablation showed that removing rolling statistics significantly worsens validation performance.
 
-### ✅ Artifact Persistence Layer
+### ✅ Feature Registry Layer
 
-- Trained model saved as `artifacts/model.pkl`
-- Evaluation metrics saved as `artifacts/metrics.json`
-- Automatic artifact directory creation
-- Reproducible pipeline outputs
+- Dedicated orchestration module (`src/feature_registry.py`)
+- Feature activation controlled through YAML configuration
+- External control of feature families:
+  - calendar
+  - lag
+  - rolling
+- Supports controlled ablation studies
+
+### ✅ Artifact Versioning Layer
+
+- Timestamp-based artifact persistence
+- Immutable experiment outputs
+- Artifacts generated per execution:
+  - model_YYYYMMDD_HHMMSS.pkl
+  - metrics_YYYYMMDD_HHMMSS.json
+
+### ✅ Feature Lineage in Metrics
+
+- Metrics artifacts now include:
+  - MAE
+  - RMSE
+  - features_used
+
+### ✅ Prediction Persistence Layer
+
+- Validation predictions saved automatically
+- Artifact includes:
+  - Store
+  - Date
+  - actual_sales
+  - predicted_sales
+  - absolute_error
+
+### ✅ Error Analysis Layer
+
+- Automatic persistence of top prediction errors
+- Top-N largest errors saved per experiment
+- Supports model diagnostic analysis
 
 ---
 
@@ -237,7 +271,8 @@ CLI Execution
                              ▼
                 ┌─────────────────────────┐
                 │      artifacts.py       │
-                │    model and metrics    │
+                │      model, metrics     │
+                │ predictions, top errors │
                 └─────────────────────────┘
 ```
 
@@ -251,6 +286,10 @@ Each module has a clearly defined responsibility:
 - **validation.py** — schema and granularity enforcement  
 - **splitting.py** — deterministic temporal train-validation split  
 - **processing.py** — feature engineering pipeline (calendar, lag, rolling features)
+- **feature_registry.py** — config-driven feature orchestration  
+- **training.py** — modeling preparation and baseline fitting  
+- **evaluation.py** — validation scoring and prediction generation  
+- **artifacts.py** — versioned persistence of model, metrics, predictions and top errors
 
 ---
 
@@ -410,11 +449,16 @@ pharma-demand-forecast/
 ├── notebooks/
 │
 ├── src/
-│ ├── ingestion.py
-│ ├── validation.py
-│ ├── splitting.py
-│ ├── config_loader.py
-│ └── logger.py
+│   ├── ingestion.py
+│   ├── validation.py
+│   ├── splitting.py
+│   ├── processing.py
+│   ├── feature_registry.py
+│   ├── training.py
+│   ├── evaluation.py
+│   ├── artifacts.py
+│   ├── config_loader.py
+│   └── logger.py
 │
 ├── main.py
 ├── requirements.txt
@@ -427,11 +471,11 @@ pharma-demand-forecast/
 
 Next stages of the project include:
 
-- Feature engineering layer (`src/processing.py`)
-- Lag and rolling window features
-- Forecasting model training pipeline
-- Forecast evaluation metrics
-- Backtesting workflows for time series validation
+- Model comparison layer (`RandomForest vs HistGradientBoosting`)
+- Experiment benchmarking across algorithms
+- Feature importance extraction
+- Prediction error aggregation by store and period
+- Future experiment tracking integration
 
 ---
 

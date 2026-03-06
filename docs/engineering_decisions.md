@@ -465,3 +465,137 @@ To improve persistence efficiency, tree complexity was constrained using:
 - `min_samples_leaf=20`
 
 This reduced artifact size to ~6 MB while preserving baseline reproducibility.
+
+## Day 5 — Feature Registry Layer
+
+### Decision
+
+Introduced a dedicated feature orchestration layer (`src/feature_registry.py`) to control feature activation externally through configuration.
+
+### Rationale
+
+Feature generation was previously hardcoded inside `processing.py`, which limited experimentation and tightly coupled feature logic with execution flow.
+
+A registry-based approach allows:
+
+- controlled feature activation  
+- reproducible ablation studies  
+- independent evolution of feature families  
+
+### Implementation
+
+A centralized registry was created:
+
+- `FEATURE_REGISTRY`
+
+Features are now activated through YAML configuration:
+
+    features:
+      calendar: true
+      lag: true
+      rolling: true
+
+### Engineering Insight
+
+Feature generation and feature orchestration must remain separate responsibilities.
+
+`processing.py` now contains only pure feature transformations, while `feature_registry.py` governs execution order.
+
+---
+
+## Day 5 — Feature Lineage in Metrics
+
+### Decision
+
+Extended metrics artifacts to include the list of active features used in each experiment.
+
+### Rationale
+
+Performance metrics without experimental context lose analytical value over time.
+
+### Implementation
+
+Metrics now persist:
+
+- MAE  
+- RMSE  
+- features_used  
+
+### Engineering Insight
+
+Experiment outputs must preserve the exact feature configuration that generated them.
+
+---
+
+## Day 5 — Artifact Versioning
+
+### Decision
+
+Implemented timestamp-based artifact versioning.
+
+### Rationale
+
+Static artifact names overwrite previous experiments and destroy traceability.
+
+### Implementation
+
+Artifacts now persist with execution timestamp:
+
+- model_YYYYMMDD_HHMMSS.pkl  
+- metrics_YYYYMMDD_HHMMSS.json  
+
+### Engineering Insight
+
+Artifacts should be immutable outputs of each pipeline execution.
+
+---
+
+## Day 5 — Prediction Persistence Layer
+
+### Decision
+
+Added validation prediction persistence.
+
+### Rationale
+
+Metrics alone are insufficient for model diagnostics.
+
+### Implementation
+
+A dedicated artifact now stores:
+
+- Store  
+- Date  
+- actual_sales  
+- predicted_sales  
+- absolute_error  
+
+### Artifact Generated
+
+- predictions_YYYYMMDD_HHMMSS.csv  
+
+### Engineering Insight
+
+Persisted predictions enable direct diagnostic analysis without re-running inference.
+
+---
+
+## Day 5 — Error Analysis Layer
+
+### Decision
+
+Added automatic persistence of top prediction errors.
+
+### Rationale
+
+The pipeline should surface where the model fails most severely.
+
+### Implementation
+
+Top-N largest absolute errors are saved automatically:
+
+- top_errors_YYYYMMDD_HHMMSS.csv  
+
+### Engineering Insight
+
+Error persistence transforms evaluation from scalar metrics into actionable model diagnosis.
