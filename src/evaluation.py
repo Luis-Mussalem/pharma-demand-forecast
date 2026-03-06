@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import pandas as pd
 from sklearn.metrics import mean_absolute_error, root_mean_squared_error
-from tornado.locale import get
 
 from src.logger import get_logger
 from src.training import (
@@ -13,7 +12,7 @@ from src.training import (
 
 logger = get_logger()
 
-def evaluate_model(model, validation_df: pd.DataFrame) -> dict:
+def evaluate_model(model, validation_df: pd.DataFrame):
     """
     Evaluate trained model on validation dataset.
     """
@@ -43,4 +42,4 @@ def evaluate_model(model, validation_df: pd.DataFrame) -> dict:
 
     logger.info("Model evaluation completed successfully.")
 
-    return metrics
+    return metrics, predictions, validation_df

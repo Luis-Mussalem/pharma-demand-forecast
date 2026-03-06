@@ -11,7 +11,8 @@ from src.evaluation import evaluate_model
 from src.artifacts import (
     save_model, 
     save_metrics,
-    generate_timestamp
+    save_predictions,
+    generate_timestamp,
 )
 from src.feature_registry import (
     run_feature_pipeline,
@@ -120,7 +121,7 @@ def main():
 
         logger.info("Baseline model trained successfully.")
 
-        metrics = evaluate_model(model, validation_df)
+        metrics, predictions, validation_ready = evaluate_model(model, validation_df)
         metrics["features_used"] = features_used
 
         logger.info(f"Model evaluation metrics: {metrics}")
@@ -128,8 +129,10 @@ def main():
         artifacts_dir = Path("artifacts")
 
         artifact_timestamp = generate_timestamp()
+        
         save_model(model, artifacts_dir, artifact_timestamp)
         save_metrics(metrics, artifacts_dir, artifact_timestamp)
+        save_predictions(validation_ready, predictions, artifacts_dir, artifact_timestamp)
 
         if args.save_processed:
             if args.output_path is None:
