@@ -71,3 +71,33 @@ def save_predictions(validation_df, predictions, output_dir: Path, timestamp: st
     result.to_csv(predictions_path, index=False)
 
     logger.info(f"Predictions saved at {predictions_path}")
+
+def save_top_errors(
+    validation_df: pd.DataFrame,
+    predictions,
+    output_dir: Path,
+    timestamp: str,
+    top_n: int = 20
+) -> None:
+    """
+    Save top prediction errors for diagnostic analysis.
+    """
+
+    logger.info("Saving top prediction errors artifact.")
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    errors_path = output_dir / f"top_errors_{timestamp}.csv"
+
+    result = validation_df[["Store", "Date", "Sales"]].copy()
+
+    result["predicted_sales"] = predictions
+    result["absolute_error"] = (result["Sales"] - result["predicted_sales"]).abs()
+
+    result = result.rename(columns={"Sales": "actual_sales"})
+
+    result = result.sort_values("absolute_error", ascending=False).head(top_n)
+
+    result.to_csv(errors_path, index=False)
+
+    logger.info(f"Top errors saved at {errors_path}")

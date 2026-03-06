@@ -12,6 +12,7 @@ from src.artifacts import (
     save_model, 
     save_metrics,
     save_predictions,
+    save_top_errors,
     generate_timestamp,
 )
 from src.feature_registry import (
@@ -133,6 +134,7 @@ def main():
         save_model(model, artifacts_dir, artifact_timestamp)
         save_metrics(metrics, artifacts_dir, artifact_timestamp)
         save_predictions(validation_ready, predictions, artifacts_dir, artifact_timestamp)
+        save_top_errors(validation_ready, predictions, artifacts_dir, artifact_timestamp)
 
         if args.save_processed:
             if args.output_path is None:
