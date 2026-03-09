@@ -13,6 +13,7 @@ features:
   calendar: true
   lag: true
   rolling: true
+  promo: true
 
 model:
   name: hist_gradient_boosting

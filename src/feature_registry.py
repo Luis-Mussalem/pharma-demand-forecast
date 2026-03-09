@@ -3,6 +3,7 @@ import pandas as pd
 from src.processing import (
     create_calendar_features,
     create_lag_features,
+    create_promo_feature,
     create_rolling_features,
 )
 from src.logger import get_logger
@@ -13,6 +14,7 @@ FEATURE_REGISTRY = {
     "calendar": create_calendar_features,
     "lag": create_lag_features,
     "rolling": create_rolling_features,
+    "promo": create_promo_feature,
 }
 
 

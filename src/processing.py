@@ -71,3 +71,14 @@ def create_rolling_features(df: pd.DataFrame) -> pd.DataFrame:
     logger.info("Rolling window features generated successfully.")
 
     return df
+
+def create_promo_feature(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Preserve promotion signal as model feature.
+    """
+
+    logger.info("Generating promo feature.")
+
+    logger.info("Promo feature generated successfully.")
+
+    return df
