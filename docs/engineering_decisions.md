@@ -700,3 +700,135 @@ The remaining limitation is likely related to feature expressiveness rather than
 At the current feature maturity level, boosting benefits more from lag and rolling features than bagging.
 
 The experiment also confirmed that extreme forecasting errors now represent the main opportunity for future pipeline evolution.
+
+## Day 6 — Error Aggregation Layer
+
+### Decision
+
+Added store-level error aggregation as a diagnostic artifact.
+
+### Rationale
+
+Global metrics hide local instability.
+
+A forecasting pipeline must identify where performance degrades systematically.
+
+### Implementation
+
+A dedicated artifact now persists:
+
+- mean absolute error by store  
+- max absolute error by store  
+- number of observations  
+
+Artifact generated:
+
+- error_by_store_YYYYMMDD_HHMMSS.csv
+
+### Engineering Insight
+
+Forecast diagnostics should not stop at global MAE and RMSE.
+
+Store-level aggregation exposes structural model weaknesses that metrics alone cannot reveal.
+
+---
+
+## Day 6 — Feature Importance Layer
+
+### Decision
+
+Introduced permutation-based feature importance after evaluation.
+
+### Rationale
+
+Model metrics quantify performance but do not explain feature contribution.
+
+A production-oriented ML pipeline should expose signal hierarchy.
+
+### Implementation
+
+A dedicated artifact now persists:
+
+- feature  
+- importance_mean  
+- importance_std  
+
+Artifact generated:
+
+- feature_importance_YYYYMMDD_HHMMSS.csv
+
+### Main Observation
+
+Current strongest predictors:
+
+- Customers  
+- Promo  
+- rolling_mean_sales_14  
+- lag_sales_1  
+
+### Engineering Insight
+
+Feature importance revealed that demand remains strongly dependent on customer volume and recent temporal memory.
+
+---
+
+## Day 6 — Benchmark History Layer
+
+### Decision
+
+Added cumulative benchmark persistence across executions.
+
+### Rationale
+
+Metrics isolated by execution do not support longitudinal experiment tracking.
+
+### Implementation
+
+A cumulative artifact now persists:
+
+- timestamp  
+- model  
+- MAE  
+- RMSE  
+- features_used  
+
+Artifact:
+
+- benchmark_history.csv
+
+### Engineering Insight
+
+Even lightweight benchmark tracking significantly improves experimental governance before adopting external tracking systems.
+
+---
+
+## Day 6 — Automatic Artifact Archiving
+
+### Decision
+
+Implemented automatic archiving of previous artifacts before new persistence.
+
+### Rationale
+
+Repeated execution generated artifact accumulation inside the active output folder.
+
+This reduced readability and operational clarity.
+
+### Implementation
+
+A housekeeping function now moves previous outputs into:
+
+- archive/models  
+- archive/metrics  
+- archive/predictions  
+- archive/diagnostics  
+
+while preserving:
+
+- benchmark_history.csv
+
+### Engineering Insight
+
+Artifact lifecycle management is part of production pipeline architecture.
+
+Persistence without retention policy eventually degrades operational quality.

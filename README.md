@@ -163,7 +163,7 @@ Two production-safe baseline models are now available through external configura
 - `RandomForestRegressor`
 - `HistGradientBoostingRegressor`
 
-Current comparison with calendar + lag + rolling features:
+Current comparison with calendar + lag + rolling + promo features:
 
 #### RandomForestRegressor
 
@@ -179,7 +179,7 @@ Current best baseline:
 
 - **HistGradientBoostingRegressor**
 
-This comparison demonstrated that boosting improves performance mainly by reducing large forecasting errors.
+This comparison confirmed that boosting reduces large forecasting errors more effectively than bagging under the current feature configuration.
 
 ### ✅ Feature Registry Layer
 
@@ -222,6 +222,55 @@ This comparison demonstrated that boosting improves performance mainly by reduci
 - Automatic persistence of top prediction errors
 - Top-N largest errors saved per experiment
 - Supports model diagnostic analysis
+
+### ✅ Error Aggregation by Store
+
+- Automatic store-level error aggregation
+- Mean absolute error per store
+- Maximum absolute error per store
+- Observation count per store
+
+This diagnostic layer highlights stores with persistent forecast instability and supports targeted feature investigation.
+
+### ✅ Feature Importance Layer
+
+- Permutation-based feature importance
+- Mean importance and standard deviation persisted automatically
+- Supports interpretation of feature contribution under the active model
+
+Current strongest predictors:
+
+- Customers
+- Promo
+- rolling_mean_sales_14
+- lag_sales_1
+
+### ✅ Benchmark History Layer
+
+- Historical benchmark registry persisted in `benchmark_history.csv`
+- One row appended per execution
+- Preserves:
+  - timestamp
+  - model
+  - MAE
+  - RMSE
+  - active features
+
+This enables longitudinal experiment comparison without external tooling.
+
+### ✅ Automatic Artifact Archiving
+
+- Previous artifacts are automatically moved to `archive/` before each new execution
+- Active `artifacts/` folder always contains only the latest champion run
+
+Archive structure:
+
+- `archive/models`
+- `archive/metrics`
+- `archive/predictions`
+- `archive/diagnostics`
+
+This prevents artifact accumulation and keeps execution outputs operationally clean.
 
 ---
 
@@ -292,8 +341,8 @@ CLI Execution
                              ▼
                 ┌─────────────────────────┐
                 │      artifacts.py       │
-                │      model, metrics     │
-                │ predictions, top errors │
+                │ persistence + archive   │
+                │ diagnostics + benchmark │
                 └─────────────────────────┘
 ```
 
@@ -310,7 +359,7 @@ Each module has a clearly defined responsibility:
 - **feature_registry.py** — config-driven feature orchestration  
 - **training.py** — modeling preparation and baseline fitting  
 - **evaluation.py** — validation scoring and prediction generation  
-- **artifacts.py** — versioned persistence of model, metrics, predictions and top errors
+- **artifacts.py** — versioned persistence, benchmark tracking, diagnostics persistence and automatic artifact archiving
 
 ---
 
@@ -455,19 +504,39 @@ This execution model prepares the pipeline for integration with:
 ```
 pharma-demand-forecast/
 │
+├── archive/
+│   ├── diagnostics/
+│   ├── metrics/
+│   ├── models/
+│   └── predictions/
+│
+├── artifacts/
+│   ├── benchmark_history.csv
+│   ├── model_YYYYMMDD_HHMMSS.pkl
+│   ├── metrics_YYYYMMDD_HHMMSS.json
+│   ├── predictions_YYYYMMDD_HHMMSS.csv
+│   ├── top_errors_YYYYMMDD_HHMMSS.csv
+│   ├── error_by_store_YYYYMMDD_HHMMSS.csv
+│   ├── experiment_summary_YYYYMMDD_HHMMSS.json
+│   └── feature_importance_YYYYMMDD_HHMMSS.csv
+│
 ├── config/
-│ └── pipeline_config.yaml
+│   └── pipeline_config.yaml
 │
 ├── data/
-│ └── raw/
+│   ├── raw/
+│   ├── interim/
+│   └── processed/
 │
 ├── docs/
-│ ├── engineering_decisions.md
-│ └── data_dictionary.md
+│   ├── engineering_decisions.md
+│   └── data_dictionary.md
 │
 ├── logs/
+│   └── pipeline.log
 │
 ├── notebooks/
+│   └── exploration.ipynb
 │
 ├── src/
 │   ├── ingestion.py
@@ -492,10 +561,10 @@ pharma-demand-forecast/
 
 Next stages of the project include:
 
-- Experiment tracking layer
-- Error aggregation by store and calendar patterns
-- Feature importance extraction
-- Controlled benchmark evolution
+- Inference layer
+- Prediction schema enforcement
+- Champion model loading
+- Separate prediction pipeline for unseen data
 
 ---
 
