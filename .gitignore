@@ -5,6 +5,7 @@ __pycache__/
 logs/
 data/raw/
 logs/
+archive/
 artifacts/
 *.pkl
 *.json
