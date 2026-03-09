@@ -135,3 +135,37 @@ def save_experiment_summary(
         json.dump(experiment_summary, f, indent=4)
 
     logger.info(f"Experiment summary saved at {output_path}")
+
+def save_error_by_store(
+    validation_ready,
+    predictions,
+    artifacts_dir: Path,
+    timestamp: str,
+):
+    """
+    Save aggregated error diagnostics by store.
+    """
+
+    logger.info("Saving error by store artifact.")
+
+    diagnostics = validation_ready[["Store"]].copy()
+    diagnostics["absolute_error"] = abs(
+        validation_ready["Sales"].values - predictions
+    )
+
+    error_by_store = (
+        diagnostics.groupby("Store")
+        .agg(
+            mean_absolute_error=("absolute_error", "mean"),
+            max_absolute_error=("absolute_error", "max"),
+            observations=("absolute_error", "count"),
+        )
+        .reset_index()
+        .sort_values("mean_absolute_error", ascending=False)
+    )
+
+    output_path = artifacts_dir / f"error_by_store_{timestamp}.csv"
+
+    error_by_store.to_csv(output_path, index=False)
+
+    logger.info(f"Error by store saved at {output_path}")

@@ -13,6 +13,7 @@ from src.artifacts import (
     save_metrics,
     save_predictions,
     save_top_errors,
+    save_error_by_store,
     save_experiment_summary,
     generate_timestamp,
 )
@@ -140,14 +141,20 @@ def main():
         save_metrics(metrics, artifacts_dir, artifact_timestamp)
         save_predictions(validation_ready, predictions, artifacts_dir, artifact_timestamp)
         save_top_errors(validation_ready, predictions, artifacts_dir, artifact_timestamp)
+        save_error_by_store(
+            validation_ready,
+            predictions,
+            artifacts_dir,
+            artifact_timestamp,
+        )
         save_experiment_summary(
             metrics=metrics,
-        features_used=features_used,
-        model_name=config["model"]["name"],
-        train_rows=len(train_df),
-        validation_rows=len(validation_df),
-        artifacts_dir=artifacts_dir,
-        timestamp=artifact_timestamp,
+            features_used=features_used,
+            model_name=config["model"]["name"],
+            train_rows=len(train_df),
+            validation_rows=len(validation_df),
+            artifacts_dir=artifacts_dir,
+            timestamp=artifact_timestamp,
         )
 
         if args.save_processed:
