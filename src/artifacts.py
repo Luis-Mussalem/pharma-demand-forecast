@@ -169,3 +169,42 @@ def save_error_by_store(
     error_by_store.to_csv(output_path, index=False)
 
     logger.info(f"Error by store saved at {output_path}")
+
+def update_benchmark_history(
+    metrics: dict,
+    features_used: list,
+    model_name: str,
+    train_rows: int,
+    validation_rows: int,
+    artifacts_dir: Path,
+    timestamp: str,
+):
+    """
+    Append current experiment to benchmark history.
+    """
+
+    logger.info("Updating benchmark history artifact.")
+
+    benchmark_path = artifacts_dir / "benchmark_history.csv"
+
+    benchmark_row = pd.DataFrame(
+        [
+            {
+                "timestamp": timestamp,
+                "model": model_name,
+                "features_used": "|".join(features_used),
+                "MAE": metrics["MAE"],
+                "RMSE": metrics["RMSE"],
+                "train_rows": train_rows,
+                "validation_rows": validation_rows,
+            }
+        ]
+    )
+
+    if benchmark_path.exists():
+        existing = pd.read_csv(benchmark_path)
+        benchmark_row = pd.concat([existing, benchmark_row], ignore_index=True)
+
+    benchmark_row.to_csv(benchmark_path, index=False)
+
+    logger.info(f"Benchmark history updated at {benchmark_path}")

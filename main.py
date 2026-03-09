@@ -16,6 +16,7 @@ from src.artifacts import (
     save_error_by_store,
     save_experiment_summary,
     generate_timestamp,
+    update_benchmark_history,
 )
 from src.feature_registry import (
     run_feature_pipeline,
@@ -148,6 +149,15 @@ def main():
             artifact_timestamp,
         )
         save_experiment_summary(
+            metrics=metrics,
+            features_used=features_used,
+            model_name=config["model"]["name"],
+            train_rows=len(train_df),
+            validation_rows=len(validation_df),
+            artifacts_dir=artifacts_dir,
+            timestamp=artifact_timestamp,
+        )
+        update_benchmark_history(
             metrics=metrics,
             features_used=features_used,
             model_name=config["model"]["name"],
