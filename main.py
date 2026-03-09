@@ -9,6 +9,7 @@ from src.splitting import temporal_train_validation_split
 from src.training import train_model
 from src.evaluation import evaluate_model
 from src.artifacts import (
+    save_feature_importance,
     save_model, 
     save_metrics,
     save_predictions,
@@ -23,6 +24,7 @@ from src.feature_registry import (
     generate_validation_features,
     FEATURE_REGISTRY,
 )
+from src.importance import compute_feature_importance
 
 def parse_arguments() -> argparse.Namespace:
     """
@@ -129,6 +131,7 @@ def main():
         logger.info(f"Model trained successfully: {config['model']['name']}")
 
         metrics, predictions, validation_ready = evaluate_model(model, validation_df)
+        importance_df = compute_feature_importance(model, validation_df)
         metrics["features_used"] = features_used
         metrics["model"] = config["model"]["name"]
 
@@ -166,6 +169,11 @@ def main():
             artifacts_dir=artifacts_dir,
             timestamp=artifact_timestamp,
         )
+        save_feature_importance(
+            importance_df,
+            artifacts_dir,
+            artifact_timestamp
+        )
 
         if args.save_processed:
             if args.output_path is None:
@@ -188,5 +196,5 @@ def main():
 
 if __name__ == "__main__":
     main()
-        
+
 

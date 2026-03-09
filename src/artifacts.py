@@ -208,3 +208,22 @@ def update_benchmark_history(
     benchmark_row.to_csv(benchmark_path, index=False)
 
     logger.info(f"Benchmark history updated at {benchmark_path}")
+
+def save_feature_importance(
+    importance_df: pd.DataFrame,
+    artifacts_dir: Path,
+    timestamp: str,
+    ):
+    """
+    Save feature importance artifact.
+    """
+
+    logger.info("Saving feature importance artifact.")
+
+    artifacts_dir.mkdir(parents=True, exist_ok=True)
+
+    output_path = artifacts_dir / f"feature_importance_{timestamp}.csv"
+
+    importance_df.to_csv(output_path, index=False)
+
+    logger.info(f"Feature importance saved at {output_path}")
