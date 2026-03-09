@@ -1,6 +1,7 @@
 import json
 import joblib
 import pandas as pd
+import shutil
 
 from datetime import datetime
 from pathlib import Path
@@ -17,6 +18,46 @@ def generate_timestamp() -> str:
 
     return datetime.now().strftime("%Y%m%d_%H%M%S")
 
+def archive_previous_artifacts():
+    """
+    Move previous artifacts to archive folders before saving new outputs.
+    """
+
+    logger.info("Archiving previous artifacts.")
+
+    artifacts_dir = Path("artifacts")
+    archive_dir = Path("archive")
+
+    folder_mapping = {
+        "model_": "models",
+        "metrics_": "metrics",
+        "experiment_summary_": "metrics",
+        "feature_importance_": "metrics",
+        "predictions_": "predictions",
+        "top_errors_": "diagnostics",
+        "error_by_store_": "diagnostics"
+    }
+
+    for file_path in artifacts_dir.iterdir():
+
+        if file_path.name == "benchmark_history.csv":
+            continue
+
+        for prefix, destination in folder_mapping.items():
+
+            if file_path.name.startswith(prefix):
+
+                target_dir = archive_dir / destination
+                target_dir.mkdir(parents=True, exist_ok=True)
+
+                shutil.move(
+                    str(file_path),
+                    str(target_dir / file_path.name)
+                )
+
+                break
+
+    logger.info("Previous artifacts archived successfully.")
 
 def save_model(model, output_dir: Path, timestamp: str) -> None:
     """

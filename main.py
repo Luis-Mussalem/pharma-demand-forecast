@@ -9,6 +9,7 @@ from src.splitting import temporal_train_validation_split
 from src.training import train_model
 from src.evaluation import evaluate_model
 from src.artifacts import (
+    archive_previous_artifacts,
     save_feature_importance,
     save_model, 
     save_metrics,
@@ -141,6 +142,8 @@ def main():
 
         artifact_timestamp = generate_timestamp()
         
+        archive_previous_artifacts()
+
         save_model(model, artifacts_dir, artifact_timestamp)
         save_metrics(metrics, artifacts_dir, artifact_timestamp)
         save_predictions(validation_ready, predictions, artifacts_dir, artifact_timestamp)
