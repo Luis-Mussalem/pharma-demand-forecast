@@ -58,10 +58,12 @@ def encode_categorical_features(X: pd.DataFrame) -> pd.DataFrame:
 
     X = X.copy()
 
-    categorical_columns = X.select_dtypes(include=["category", "object"]).columns
+    categorical_columns = list(
+        X.select_dtypes(include=["object", "category"]).columns
+    )
 
     if len(categorical_columns) > 0:
-        logger.info(f"Categorical columns detected: {list(categorical_columns)}")
+        logger.info(f"Categorical columns detected: {categorical_columns}")
 
         for column in categorical_columns:
             X[column] = X[column].astype("category").cat.codes
