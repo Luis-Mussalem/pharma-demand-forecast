@@ -101,3 +101,37 @@ def save_top_errors(
     result.to_csv(errors_path, index=False)
 
     logger.info(f"Top errors saved at {errors_path}")
+
+def save_experiment_summary(
+    metrics: dict,
+    features_used: list,
+    model_name: str,
+    train_rows: int,
+    validation_rows: int,
+    artifacts_dir: Path,
+    timestamp: str,
+):
+    """
+    Save consolidated experiment metadata.
+    """
+
+    logger.info("Saving experiment summary artifact.")
+
+    experiment_summary = {
+        "timestamp": timestamp,
+        "model": model_name,
+        "features_used": features_used,
+        "train_rows": train_rows,
+        "validation_rows": validation_rows,
+        "metrics": {
+            "MAE": metrics["MAE"],
+            "RMSE": metrics["RMSE"],
+        },
+    }
+
+    output_path = artifacts_dir / f"experiment_summary_{timestamp}.json"
+
+    with open(output_path, "w") as f:
+        json.dump(experiment_summary, f, indent=4)
+
+    logger.info(f"Experiment summary saved at {output_path}")
