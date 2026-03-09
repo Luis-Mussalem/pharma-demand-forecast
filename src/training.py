@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import pandas as pd
-from sklearn.ensemble import RandomForestRegressor
+from sklearn.ensemble import RandomForestRegressor, HistGradientBoostingRegressor
 
 from src.logger import get_logger
 
@@ -64,37 +64,52 @@ def encode_categorical_features(X: pd.DataFrame) -> pd.DataFrame:
         logger.info(f"Categorical columns detected: {list(categorical_columns)}")
 
         for column in categorical_columns:
-            X[column] = X[column].cat.codes
+            X[column] = X[column].astype("category").cat.codes
 
     logger.info("Categorical encoding completed successfully.")
 
     return X
 
-def train_model(train_df: pd.DataFrame):
+def build_model(model_name: str) -> object:
     """
-    Train baseline forecasting model.
+    Factory responsible for building models in a controlled way.
+    Each model uses explicit and reproducible hyperparameters.
     """
 
-    logger.info("Starting model training.")
+    if model_name == "random_forest":
+        return RandomForestRegressor(
+            n_estimators=20,
+            max_depth=12,
+            min_samples_leaf=20,
+            random_state=42,
+            n_jobs=-1
+        )
 
-    train_df = prepare_modeling_data(train_df)
-    
-    X_train, y_train = prepare_features(train_df)
+    if model_name == "hist_gradient_boosting":
+        return HistGradientBoostingRegressor(
+            max_iter=200,
+            learning_rate=0.05,
+            max_depth=8,
+            min_samples_leaf=20,
+            random_state=42
+        )
+
+    raise ValueError(f"Unsupported model: {model_name}")
+
+
+def train_model(train_df, model_name: str):
+    """
+    Train the selected model using external configuration.
+    """
+
+    train_ready = prepare_modeling_data(train_df)
+
+    X_train, y_train = prepare_features(train_ready)
 
     X_train = encode_categorical_features(X_train)
 
-    model = RandomForestRegressor(
-    n_estimators=20,
-    max_depth=12,
-    min_samples_leaf=20,
-    random_state=42,
-    n_jobs=-1
-    )
+    model = build_model(model_name)
 
-    logger.info("Training model. This may take a moment...")
-    
     model.fit(X_train, y_train)
-
-    logger.info("Model training completed successfully.")
 
     return model

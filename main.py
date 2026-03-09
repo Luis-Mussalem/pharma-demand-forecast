@@ -60,9 +60,9 @@ def parse_arguments() -> argparse.Namespace:
 
     return parser.parse_args()
 
-def configure_logger(log_level: str) :
+def configure_logger(log_level: str):
     """
-    Configure logger level dinamicaly
+    Configure logger level dynamically
     """
 
     logger = get_logger()
@@ -118,12 +118,16 @@ def main():
 
         logger.info("Feature engineering completed successfully.")
 
-        model = train_model(train_df)
+        model = train_model(
+            train_df,
+            config["model"]["name"]
+        )
 
-        logger.info("Baseline model trained successfully.")
+        logger.info(f"Model trained successfully: {config['model']['name']}")
 
         metrics, predictions, validation_ready = evaluate_model(model, validation_df)
         metrics["features_used"] = features_used
+        metrics["model"] = config["model"]["name"]
 
         logger.info(f"Model evaluation metrics: {metrics}")
 

@@ -130,7 +130,11 @@ Granularity is validated as part of the **data contract layer**.
 
 - Dedicated training module (`src/training.py`)
 - Explicit separation between feature matrix and target variable
-- Baseline model training with `RandomForestRegressor`
+- Modular model training through a model factory
+- Support for multiple algorithms:
+  - `RandomForestRegressor`
+  - `HistGradientBoostingRegressor`
+- Model selection controlled externally through YAML configuration
 - Modular training pipeline
 
 ### ✅ Training Readiness Layer
@@ -152,14 +156,30 @@ Granularity is validated as part of the **data contract layer**.
 - MAE and RMSE calculated on temporal validation set
 - Consistent preprocessing between training and validation data
 
-### ✅ Baseline Performance Tracking
+### ✅ Model Comparison Layer
 
-Current baseline metrics (RandomForest + calendar + lag + rolling):
+Two production-safe baseline models are now available through external configuration:
+
+- `RandomForestRegressor`
+- `HistGradientBoostingRegressor`
+
+Current comparison with calendar + lag + rolling features:
+
+#### RandomForestRegressor
 
 - **MAE:** 513.96  
 - **RMSE:** 802.35  
 
-Feature ablation showed that removing rolling statistics significantly worsens validation performance.
+#### HistGradientBoostingRegressor
+
+- **MAE:** 508.37  
+- **RMSE:** 779.23  
+
+Current best baseline:
+
+- **HistGradientBoostingRegressor**
+
+This comparison demonstrated that boosting improves performance mainly by reducing large forecasting errors.
 
 ### ✅ Feature Registry Layer
 
@@ -182,6 +202,7 @@ Feature ablation showed that removing rolling statistics significantly worsens v
 ### ✅ Feature Lineage in Metrics
 
 - Metrics artifacts now include:
+  - model
   - MAE
   - RMSE
   - features_used
@@ -471,11 +492,10 @@ pharma-demand-forecast/
 
 Next stages of the project include:
 
-- Model comparison layer (`RandomForest vs HistGradientBoosting`)
-- Experiment benchmarking across algorithms
+- Experiment tracking layer
+- Error aggregation by store and calendar patterns
 - Feature importance extraction
-- Prediction error aggregation by store and period
-- Future experiment tracking integration
+- Controlled benchmark evolution
 
 ---
 

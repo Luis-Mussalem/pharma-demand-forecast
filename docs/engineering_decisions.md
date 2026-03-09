@@ -599,3 +599,104 @@ Top-N largest absolute errors are saved automatically:
 ### Engineering Insight
 
 Error persistence transforms evaluation from scalar metrics into actionable model diagnosis.
+
+## Day 6 — Model Comparison Layer
+
+### Decision
+
+Introduced a controlled model factory inside `src/training.py` to support multiple algorithms without changing pipeline orchestration.
+
+### Rationale
+
+The training layer previously contained a single hardcoded model, which limited experimentation and created architectural coupling.
+
+A model factory allows:
+
+- external model selection  
+- reproducible experiment comparison  
+- future algorithm expansion  
+
+### Implementation
+
+A new function was introduced:
+
+- `build_model(model_name)`
+
+Supported models:
+
+- `RandomForestRegressor`
+- `HistGradientBoostingRegressor`
+
+Model selection is now controlled through YAML:
+
+    model:
+      name: hist_gradient_boosting
+
+### Engineering Insight
+
+Model construction and model fitting must remain separate responsibilities.
+
+`build_model()` now handles model creation, while `train_model()` handles data preparation and fitting.
+
+This introduces the first layer of experiment architecture.
+
+---
+
+## Day 6 — Model Lineage in Metrics
+
+### Decision
+
+Extended metrics artifacts to include model identity.
+
+### Rationale
+
+Multiple models require explicit experiment lineage.
+
+### Implementation
+
+Metrics now persist:
+
+- model  
+- MAE  
+- RMSE  
+- features_used  
+
+### Engineering Insight
+
+Metrics without model identity become analytically incomplete in multi-model environments.
+
+---
+
+## Day 6 — Baseline Comparison Result
+
+### Experimental Result
+
+#### RandomForestRegressor
+
+- MAE: 513.96  
+- RMSE: 802.35  
+
+#### HistGradientBoostingRegressor
+
+- MAE: 508.37  
+- RMSE: 779.23  
+
+### Interpretation
+
+HistGradientBoosting improved both average error and large-error behavior.
+
+The stronger reduction in RMSE indicates better handling of extreme forecasting errors.
+
+### Error Analysis Insight
+
+Top prediction errors remain concentrated in a small set of stores, especially Store 909.
+
+This indicates that model improvement alone is not sufficient to fully capture extreme sales spikes.
+
+The remaining limitation is likely related to feature expressiveness rather than model capacity.
+
+### Engineering Insight
+
+At the current feature maturity level, boosting benefits more from lag and rolling features than bagging.
+
+The experiment also confirmed that extreme forecasting errors now represent the main opportunity for future pipeline evolution.
