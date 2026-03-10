@@ -272,6 +272,30 @@ Archive structure:
 
 This prevents artifact accumulation and keeps execution outputs operationally clean.
 
+### ✅ Inference Pipeline Layer
+
+- Dedicated inference entry point through `predict.py`
+- Separate inference execution independent from training pipeline
+- Automatic loading of latest champion model from `artifacts/`
+- Reuse of feature registry during inference
+- Reuse of training preprocessing for feature compatibility
+
+### ✅ Inference Schema Hardening
+
+- Automatic removal of `Sales` column when present in inference input
+- Missing-value filtering before prediction
+- Categorical encoding aligned with training pipeline
+- Protection against schema mismatch during inference execution
+
+### ✅ Inference Artifact Persistence
+
+- Prediction outputs persisted automatically
+- Artifact generated:
+
+  - inference_predictions_YYYYMMDD_HHMMSS.csv
+
+This establishes the first production-style separation between training and inference execution.
+
 ---
 
 # Pipeline Architecture
@@ -344,6 +368,12 @@ CLI Execution
                 │ persistence + archive   │
                 │ diagnostics + benchmark │
                 └─────────────────────────┘
+                             │
+                             ▼
+                ┌─────────────────────────┐
+                │       predict.py        │
+                │ separate inference flow │
+                └─────────────────────────┘
 ```
 
 Each module has a clearly defined responsibility:
@@ -359,7 +389,8 @@ Each module has a clearly defined responsibility:
 - **feature_registry.py** — config-driven feature orchestration  
 - **training.py** — modeling preparation and baseline fitting  
 - **evaluation.py** — validation scoring and prediction generation  
-- **artifacts.py** — versioned persistence, benchmark tracking, diagnostics persistence and automatic artifact archiving
+- **artifacts.py** — versioned persistence, benchmark tracking, diagnostics persistence and automatic artifact archiving  
+- **predict.py** — isolated inference execution using latest champion model
 
 ---
 
@@ -547,10 +578,13 @@ pharma-demand-forecast/
 │   ├── training.py
 │   ├── evaluation.py
 │   ├── artifacts.py
+│   ├── importance.py
+│   ├── inference.py
 │   ├── config_loader.py
 │   └── logger.py
 │
 ├── main.py
+├── predict.py
 ├── requirements.txt
 └── README.md
 ```
@@ -561,10 +595,10 @@ pharma-demand-forecast/
 
 Next stages of the project include:
 
-- Inference layer
-- Prediction schema enforcement
-- Champion model loading
-- Separate prediction pipeline for unseen data
+- Production input contracts for unseen external data
+- Model registry evolution
+- Dedicated champion/challenger promotion logic
+- Batch inference orchestration
 
 ---
 

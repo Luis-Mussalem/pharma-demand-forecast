@@ -832,3 +832,115 @@ while preserving:
 Artifact lifecycle management is part of production pipeline architecture.
 
 Persistence without retention policy eventually degrades operational quality.
+
+## Day 7 — Inference Layer
+
+### Decision
+
+Created a dedicated inference pipeline separated from training execution.
+
+### Rationale
+
+Training and inference must not share the same execution entry point.
+
+A production pipeline requires isolated prediction flow using persisted model artifacts.
+
+### Implementation
+
+A new entry point was introduced:
+
+- `predict.py`
+
+The inference flow now performs:
+
+- configuration loading  
+- raw data ingestion  
+- validation  
+- feature generation  
+- latest model discovery  
+- model loading  
+- prediction generation  
+
+### Engineering Insight
+
+Separating inference from training is a core production architecture principle.
+
+The training pipeline produces artifacts.
+
+The inference pipeline consumes artifacts.
+
+---
+
+## Day 7 — Champion Model Loading
+
+### Decision
+
+Implemented automatic loading of the latest available model artifact.
+
+### Rationale
+
+Inference should not depend on manually defined model paths.
+
+### Implementation
+
+The pipeline now automatically selects:
+
+- latest `model_YYYYMMDD_HHMMSS.pkl`
+
+from:
+
+- `artifacts/`
+
+### Engineering Insight
+
+This establishes the first lightweight champion model mechanism.
+
+---
+
+## Day 7 — Inference Schema Hardening
+
+### Decision
+
+Added schema sanitization before prediction.
+
+### Rationale
+
+Inference inputs may contain columns not required by the model.
+
+The target column must never enter prediction flow.
+
+### Implementation
+
+When detected:
+
+- `Sales` is automatically removed
+
+A log is emitted:
+
+- Sales column detected in inference input and removed
+
+### Engineering Insight
+
+Inference pipelines must actively sanitize input schemas before scoring.
+
+---
+
+## Day 7 — Inference Artifact Persistence
+
+### Decision
+
+Added persistence for inference outputs.
+
+### Rationale
+
+Inference results should be reproducible and auditable.
+
+### Implementation
+
+A dedicated artifact now persists:
+
+- inference_predictions_YYYYMMDD_HHMMSS.csv
+
+### Engineering Insight
+
+Prediction persistence closes the first full training → artifact → inference cycle.
