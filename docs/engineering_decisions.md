@@ -944,3 +944,61 @@ A dedicated artifact now persists:
 ### Engineering Insight
 
 Prediction persistence closes the first full training → artifact → inference cycle.
+
+## Day 7 — Inference Artifact Retention
+
+### Decision
+
+Separated inference artifact archiving from training artifact archiving.
+
+### Rationale
+
+Inference outputs must not trigger movement of training artifacts.
+
+Training and inference require independent retention policies.
+
+### Implementation
+
+A dedicated function was introduced:
+
+- archive_inference_artifacts()
+
+This function archives only:
+
+- inference_predictions_*.csv
+
+into:
+
+- archive/predictions
+
+### Engineering Insight
+
+Artifact lifecycle policies must follow execution responsibility.
+
+Training artifacts and inference artifacts belong to different operational flows.
+
+---
+
+## Day 7 — Inference Schema Validation
+
+### Decision
+
+Promoted inference schema checks to an explicit validation function.
+
+### Rationale
+
+Schema validation should not remain hidden inside preprocessing logic.
+
+### Implementation
+
+A dedicated function now validates:
+
+- required columns  
+- missing columns  
+- target leakage (`Sales`)  
+
+before feature preparation.
+
+### Engineering Insight
+
+Validation must appear explicitly before transformation in production pipelines.

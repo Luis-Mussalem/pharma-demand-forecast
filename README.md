@@ -290,11 +290,12 @@ This prevents artifact accumulation and keeps execution outputs operationally cl
 ### ✅ Inference Artifact Persistence
 
 - Prediction outputs persisted automatically
+- Previous inference outputs archived before each new execution
 - Artifact generated:
 
   - inference_predictions_YYYYMMDD_HHMMSS.csv
 
-This establishes the first production-style separation between training and inference execution.
+This keeps inference outputs operationally clean while preserving historical prediction lineage.
 
 ---
 
@@ -595,7 +596,7 @@ pharma-demand-forecast/
 
 Next stages of the project include:
 
-- Production input contracts for unseen external data
+- External inference input support
 - Model registry evolution
 - Dedicated champion/challenger promotion logic
 - Batch inference orchestration

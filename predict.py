@@ -47,8 +47,6 @@ def main():
 
     logger.info("Inference pipeline completed successfully.")
 
-    print(predictions.head())
-
 
 if __name__ == "__main__":
     main()
