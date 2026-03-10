@@ -52,6 +52,11 @@ def prepare_inference_data(df: pd.DataFrame) -> pd.DataFrame:
 
     logger.info("Preparing inference dataset.")
 
+    if "Sales" in df.columns:
+        logger.info("Sales column detected in inference input and removed.")
+
+        df = df.drop(columns=["Sales"])
+
     X, _ = prepare_features(df)
 
     X = encode_categorical_features(X)
