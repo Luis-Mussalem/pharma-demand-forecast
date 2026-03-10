@@ -36,16 +36,20 @@ def prepare_modeling_data(df: pd.DataFrame) -> pd.DataFrame:
 
 def prepare_features(df: pd.DataFrame):
     """
-    Separate feature matrix and target variable.
+    Separate feature matrix and target when target is available.
+    Supports both training and inference datasets.
     """
 
     logger.info("Preparing features and target.")
 
-    X = df.drop(columns=[TARGET_COLUMN] + EXCLUDED_COLUMNS)
-    y = df[TARGET_COLUMN]
+    X = df.drop(columns=["Sales", "Date"], errors="ignore")
+
+    y = df["Sales"] if "Sales" in df.columns else None
 
     logger.info(f"Feature matrix shape: {X.shape}")
-    logger.info(f"Target vector shape: {y.shape}")
+
+    if y is not None:
+        logger.info(f"Target vector shape: {y.shape}")
 
     return X, y
 
