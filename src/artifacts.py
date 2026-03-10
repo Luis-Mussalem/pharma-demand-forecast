@@ -59,6 +59,29 @@ def archive_previous_artifacts():
 
     logger.info("Previous artifacts archived successfully.")
 
+def archive_inference_artifacts():
+    """
+    Move previous inference artifacts before saving new inference output.
+    """
+
+    logger.info("Archiving previous inference artifacts.")
+
+    artifacts_dir = Path("artifacts")
+    archive_dir = Path("archive") / "predictions"
+
+    archive_dir.mkdir(parents=True, exist_ok=True)
+
+    for file_path in artifacts_dir.iterdir():
+
+        if file_path.name.startswith("inference_predictions_"):
+
+            shutil.move(
+                str(file_path),
+                str(archive_dir / file_path.name)
+            )
+
+    logger.info("Previous inference artifacts archived successfully.")
+
 def save_model(model, output_dir: Path, timestamp: str) -> None:
     """
     Save trained model artifact.

@@ -8,6 +8,42 @@ from src.training import prepare_features, encode_categorical_features
 
 logger = get_logger()
 
+def validate_inference_schema(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Validate inference input schema before preprocessing.
+    """
+
+    logger.info("Validating inference input schema.")
+
+    required_columns = [
+        "Store",
+        "DayOfWeek",
+        "Date",
+        "Customers",
+        "Open",
+        "Promo",
+        "StateHoliday",
+        "SchoolHoliday"
+    ]
+
+    missing_columns = [
+        column for column in required_columns
+        if column not in df.columns
+    ]
+
+    if missing_columns:
+        raise ValueError(
+            f"Missing required inference columns: {missing_columns}"
+        )
+
+    if "Sales" in df.columns:
+        logger.info("Sales column detected in inference input and removed.")
+        df = df.drop(columns=["Sales"])
+
+    logger.info("Inference schema validated successfully.")
+
+    return df
+
 def get_latest_model_path() -> str:
     """
     Retrieve latest trained model artifact automatically.
@@ -52,10 +88,7 @@ def prepare_inference_data(df: pd.DataFrame) -> pd.DataFrame:
 
     logger.info("Preparing inference dataset.")
 
-    if "Sales" in df.columns:
-        logger.info("Sales column detected in inference input and removed.")
-
-        df = df.drop(columns=["Sales"])
+    df = validate_inference_schema(df)
 
     X, _ = prepare_features(df)
 
