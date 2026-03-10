@@ -70,7 +70,14 @@ def run_inference(model, df: pd.DataFrame) -> pd.DataFrame:
 
     X = prepare_inference_data(df)
 
+    valid_index = X.dropna().index
+
+    X = X.loc[valid_index]
+    
+    df = df.loc[valid_index]
+
     predictions = model.predict(X)
+    predictions = predictions.clip(min=0)
 
     result = df.copy()
     result["predicted_sales"] = predictions

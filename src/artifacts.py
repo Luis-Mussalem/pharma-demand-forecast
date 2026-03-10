@@ -268,3 +268,21 @@ def save_feature_importance(
     importance_df.to_csv(output_path, index=False)
 
     logger.info(f"Feature importance saved at {output_path}")
+
+def save_inference_predictions(
+    predictions: pd.DataFrame,
+    timestamp: str
+) -> None:
+    """
+    Save inference predictions artifact.
+    """
+
+    logger.info("Saving inference predictions artifact.")
+
+    output_path = Path(
+        f"artifacts/inference_predictions_{timestamp}.csv"
+    )
+
+    predictions.to_csv(output_path, index=False)
+
+    logger.info(f"Inference predictions saved at {output_path}")

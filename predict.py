@@ -1,11 +1,12 @@
 from pathlib import Path
+from datetime import datetime
 
 from src.ingestion import load_data
 from src.config_loader import load_config
 from src.feature_registry import run_feature_pipeline
 from src.inference import load_model, run_inference
 from src.logger import get_logger
-
+from src.artifacts import save_inference_predictions
 
 logger = get_logger()
 
@@ -31,6 +32,13 @@ def main():
     model = load_model()
 
     predictions = run_inference(model, df)
+
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+    save_inference_predictions(
+        predictions,
+        timestamp
+    )
 
     logger.info("Inference pipeline completed successfully.")
 
