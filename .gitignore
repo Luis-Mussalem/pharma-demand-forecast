@@ -4,8 +4,8 @@ __pycache__/
 .env
 logs/
 data/raw/
-logs/
 archive/
 artifacts/
 *.pkl
 *.json
+docs/archive/

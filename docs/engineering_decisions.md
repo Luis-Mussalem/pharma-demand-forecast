@@ -1002,3 +1002,101 @@ before feature preparation.
 ### Engineering Insight
 
 Validation must appear explicitly before transformation in production pipelines.
+# Day 8 — External Inference Input Separation
+
+## Decision
+
+Separated inference input from training source by creating a dedicated inference dataset path.
+
+## Why
+
+Training data and prediction input must belong to different operational layers.
+
+Using training source directly during inference creates unrealistic execution behavior.
+
+## Implementation
+
+Created:
+
+data/inference/future_data.csv
+
+Configured through:
+
+pipeline_config.yaml
+
+## Engineering Insight
+
+Inference should simulate production input as early as possible, even in local pipelines.
+
+# Day 8 — Historical Context Stabilization for Inference
+
+## Decision
+
+Refined inference context generation to preserve only valid rows after lag and rolling feature construction.
+
+## Why
+
+Initial inference execution generated empty prediction matrices because temporal feature generation invalidated all future rows.
+
+## Implementation
+
+Applied controlled historic tail selection before feature generation and restricted final inference matrix to valid prediction rows.
+
+## Engineering Insight
+
+Temporal inference pipelines require explicit row survival control after feature creation.
+
+# Day 8 — Configuration Hardening
+
+## Decision
+
+Removed remaining inference hardcodes and aligned runtime paths with centralized configuration.
+
+## Why
+
+Inference and training must follow the same configuration contract.
+
+Hardcoded paths create hidden coupling and reduce portability.
+
+## Implementation
+
+Inference input path is now resolved through pipeline configuration.
+
+Historical training reference remains explicit only where required for lag reconstruction.
+
+## Engineering Insight
+
+Configuration centralization should grow only where it improves control, not where it adds unnecessary indirection.
+
+# Day 8 — Internal Redundancy Cleanup
+
+## Decision
+
+Removed small internal redundancies after inference stabilization.
+
+## Why
+
+Once inference became stable, some local structures no longer justified their existence.
+
+## Engineering Insight
+
+Small redundancies accumulate quickly in modular pipelines and should be removed early before architectural growth.
+
+# Day 8 — Surgical Refactor Principle Consolidation
+
+## Decision
+
+Adopt minimal-change refactor policy for all new adjustments.
+
+## Rule
+
+Every correction must:
+
+- modify only necessary lines  
+- preserve current architecture  
+- avoid artificial helper expansion  
+- maintain linear readability  
+
+## Engineering Insight
+
+Pipeline maturity depends not only on adding layers, but on protecting internal clarity.
