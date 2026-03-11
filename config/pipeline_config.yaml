@@ -28,3 +28,4 @@ inference:
     - Promo
     - StateHoliday
     - SchoolHoliday
+  history_window_days: 14

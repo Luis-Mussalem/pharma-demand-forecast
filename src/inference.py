@@ -83,7 +83,7 @@ def load_pipeline_config(config_path: str = "config/pipeline_config.yaml") -> di
 
     return config
 
-def build_inference_context(future_df: pd.DataFrame) -> pd.DataFrame:
+def build_inference_context(future_df: pd.DataFrame, history_window: int) -> pd.DataFrame:
     """
     Concatenate recent historiccal observations to support lag fearture generation.
     """
@@ -98,7 +98,7 @@ def build_inference_context(future_df: pd.DataFrame) -> pd.DataFrame:
 
     recent_history = (
         history.groupby("Store")
-        .tail(14)
+        .tail(history_window)
     )
 
     combined = pd.concat(
@@ -121,7 +121,9 @@ def prepare_inference_data(df: pd.DataFrame) -> pd.DataFrame:
 
     future_size = len(df)
     
-    df = build_inference_context(df)
+    history_window = config["inference"]   ["history_window_days"]
+
+    df = build_inference_context(df, history_window)
     
     feature_config = config["features"] 
     
