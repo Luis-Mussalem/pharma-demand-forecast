@@ -5,6 +5,7 @@ from pathlib import Path
 
 from src.logger import get_logger
 from src.training import prepare_features, encode_categorical_features
+from src.feature_registry import run_feature_pipeline
 
 logger = get_logger()
 
@@ -19,7 +20,6 @@ def validate_inference_schema(df: pd.DataFrame) -> pd.DataFrame:
         "Store",
         "DayOfWeek",
         "Date",
-        "Customers",
         "Open",
         "Promo",
         "StateHoliday",
@@ -80,6 +80,29 @@ def load_model(model_path: str = None):
 
     return model
 
+def build_inference_context(future_df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Concatenate recent historiccal observations to support lag fearture generation.
+    """
+
+    history = pd.read_csv(
+        "data/raw/train.csv",
+        parse_dates=["Date"],
+    )
+
+    history = history.sort_values(["Store", "Date"])
+
+    recent_history = (
+        history.groupby("Store")
+        .tail(14)
+    )
+
+    combined = pd.concat(
+        [recent_history, future_df],
+        ignore_index=True
+    )
+
+    return combined
 
 def prepare_inference_data(df: pd.DataFrame) -> pd.DataFrame:
     """
@@ -90,13 +113,48 @@ def prepare_inference_data(df: pd.DataFrame) -> pd.DataFrame:
 
     df = validate_inference_schema(df)
 
+    future_size = len(df)
+    
+    df = build_inference_context(df)
+
+    df = run_feature_pipeline(
+        df,
+        {
+            "calendar": True,
+            "lag": True,
+            "rolling": True,
+            "promo": True
+        }
+    )
+
+    df = df.tail(future_size)
+
+    df = (
+        df.sort_values(["Store", "Date"])
+            .groupby("Store")
+            .head(1)
+    )
+
+    if "Id" in df.columns:
+            df = df.drop(columns=["Id"])
+
     X, _ = prepare_features(df)
 
     X = encode_categorical_features(X)
 
-    logger.info("Inference dataset ready.")
+    rolling_columns = [
+    "rolling_mean_sales_7",
+    "rolling_mean_sales_14",
+    "rolling_std_sales_7"
+    ]
 
-    return X
+    X[rolling_columns] = X[rolling_columns].fillna(0)
+
+    aligned_df = df.loc[X.index]
+
+    logger.info(f"Final inference matrix shape: {X.shape}")
+
+    return X, aligned_df
 
 
 def run_inference(model, df: pd.DataFrame) -> pd.DataFrame:
@@ -106,13 +164,7 @@ def run_inference(model, df: pd.DataFrame) -> pd.DataFrame:
 
     logger.info("Running inference.")
 
-    X = prepare_inference_data(df)
-
-    valid_index = X.dropna().index
-
-    X = X.loc[valid_index]
-    
-    df = df.loc[valid_index]
+    X, df = prepare_inference_data(df)
 
     predictions = model.predict(X)
     predictions = predictions.clip(min=0)

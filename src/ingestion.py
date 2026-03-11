@@ -13,7 +13,7 @@ CSV_DTYPES = {
     "DayOfWeek": "int64",
     "Sales": "int64",
     "Customers": "int64",
-    "Open": "int64",
+    "Open": "Int64",
     "Promo": "int64",
     "StateHoliday": "category",
     "SchoolHoliday": "int64",
@@ -22,7 +22,7 @@ CSV_DTYPES = {
 DATE_COLUMNS = ["Date"]
 
 
-def load_data(file_path: Path) -> pd.DataFrame:
+def load_data(file_path: Path, validate=True) -> pd.DataFrame:
     """
     Loads raw CSV data, applies schema enforcement and validation.
     """
@@ -44,8 +44,9 @@ def load_data(file_path: Path) -> pd.DataFrame:
         if not pd.api.types.is_datetime64_any_dtype(df["Date"]):
             raise TypeError("Date column was not parsed as datetime.")
 
-        validate_dataset(df)
-
+        if validate:
+            validate_dataset(df)
+    
         logger.info("Dataset validation completed successfully.")
 
         return df

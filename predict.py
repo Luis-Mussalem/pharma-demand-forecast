@@ -23,14 +23,9 @@ def main():
 
     config = load_config(Path("config/pipeline_config.yaml"))
 
-    data_path = config["data"]["raw_data_path"]
+    data_path = config["inference"]["data_path"]
 
-    df = load_data(data_path)
-
-    df = run_feature_pipeline(
-        df,
-        config["features"]
-    )
+    df = load_data(data_path, validate=False)
 
     model = load_model()
 
