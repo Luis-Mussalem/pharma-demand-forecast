@@ -1,12 +1,12 @@
 import joblib
 import pandas as pd
-import yaml
 
 from pathlib import Path
 
 from src.logger import get_logger
 from src.training import prepare_features, encode_categorical_features
 from src.feature_registry import run_feature_pipeline
+from src.config_loader import load_config
 
 logger = get_logger()
 
@@ -73,16 +73,6 @@ def load_model(model_path: str = None):
 
     return model
 
-def load_pipeline_config(config_path: str = "config/pipeline_config.yaml") -> dict:
-    """
-    Load feature configuration from pipeline config.
-    """
-
-    with open(config_path, "r") as file:
-        config = yaml.safe_load(file)
-
-    return config
-
 def build_inference_context(future_df: pd.DataFrame, history_window: int) -> pd.DataFrame:
     """
     Concatenate recent historiccal observations to support lag fearture generation.
@@ -115,7 +105,7 @@ def prepare_inference_data(df: pd.DataFrame) -> pd.DataFrame:
 
     logger.info("Preparing inference dataset.")
 
-    config = load_pipeline_config()
+    config = load_config(Path("config/pipeline_config.yaml"))
 
     df = validate_inference_schema(df, config)
 
