@@ -1,5 +1,6 @@
 import joblib
 import pandas as pd
+import yaml
 
 from pathlib import Path
 
@@ -80,6 +81,16 @@ def load_model(model_path: str = None):
 
     return model
 
+def load_feature_config(config_path: str = "config/pipeline_config.yaml") -> dict:
+    """
+    Load feature configuration from pipeline config.
+    """
+
+    with open(config_path, "r") as file:
+        config = yaml.safe_load(file)
+
+    return config["features"]
+
 def build_inference_context(future_df: pd.DataFrame) -> pd.DataFrame:
     """
     Concatenate recent historiccal observations to support lag fearture generation.
@@ -88,6 +99,7 @@ def build_inference_context(future_df: pd.DataFrame) -> pd.DataFrame:
     history = pd.read_csv(
         "data/raw/train.csv",
         parse_dates=["Date"],
+        dtype={"StateHoliday": str},
     )
 
     history = history.sort_values(["Store", "Date"])
@@ -117,15 +129,9 @@ def prepare_inference_data(df: pd.DataFrame) -> pd.DataFrame:
     
     df = build_inference_context(df)
 
-    df = run_feature_pipeline(
-        df,
-        {
-            "calendar": True,
-            "lag": True,
-            "rolling": True,
-            "promo": True
-        }
-    )
+    feature_config = load_feature_config()
+
+    df = run_feature_pipeline(df, feature_config)
 
     df = df.tail(future_size)
 
