@@ -17,15 +17,9 @@ def validate_inference_schema(df: pd.DataFrame) -> pd.DataFrame:
 
     logger.info("Validating inference input schema.")
 
-    required_columns = [
-        "Store",
-        "DayOfWeek",
-        "Date",
-        "Open",
-        "Promo",
-        "StateHoliday",
-        "SchoolHoliday"
-    ]
+    config = load_pipeline_config()
+
+    required_columns = config["inference"]["required_columns"]
 
     missing_columns = [
         column for column in required_columns
@@ -81,7 +75,7 @@ def load_model(model_path: str = None):
 
     return model
 
-def load_feature_config(config_path: str = "config/pipeline_config.yaml") -> dict:
+def load_pipeline_config(config_path: str = "config/pipeline_config.yaml") -> dict:
     """
     Load feature configuration from pipeline config.
     """
@@ -89,7 +83,7 @@ def load_feature_config(config_path: str = "config/pipeline_config.yaml") -> dic
     with open(config_path, "r") as file:
         config = yaml.safe_load(file)
 
-    return config["features"]
+    return config
 
 def build_inference_context(future_df: pd.DataFrame) -> pd.DataFrame:
     """
@@ -129,8 +123,10 @@ def prepare_inference_data(df: pd.DataFrame) -> pd.DataFrame:
     
     df = build_inference_context(df)
 
-    feature_config = load_feature_config()
-
+    config = load_pipeline_config()
+    
+    feature_config = config["features"] 
+    
     df = run_feature_pipeline(df, feature_config)
 
     df = df.tail(future_size)

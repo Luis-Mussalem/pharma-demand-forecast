@@ -20,3 +20,11 @@ model:
 
 inference:
   data_path: data/inference/future_data.csv
+  required_columns:
+    - Store
+    - DayOfWeek
+    - Date
+    - Open
+    - Promo
+    - StateHoliday
+    - SchoolHoliday
