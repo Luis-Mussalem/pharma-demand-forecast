@@ -10,14 +10,12 @@ from src.feature_registry import run_feature_pipeline
 
 logger = get_logger()
 
-def validate_inference_schema(df: pd.DataFrame) -> pd.DataFrame:
+def validate_inference_schema(df: pd.DataFrame, config: dict) -> pd.DataFrame:
     """
     Validate inference input schema before preprocessing.
     """
 
     logger.info("Validating inference input schema.")
-
-    config = load_pipeline_config()
 
     required_columns = config["inference"]["required_columns"]
 
@@ -117,13 +115,13 @@ def prepare_inference_data(df: pd.DataFrame) -> pd.DataFrame:
 
     logger.info("Preparing inference dataset.")
 
-    df = validate_inference_schema(df)
+    config = load_pipeline_config()
+
+    df = validate_inference_schema(df, config)
 
     future_size = len(df)
     
     df = build_inference_context(df)
-
-    config = load_pipeline_config()
     
     feature_config = config["features"] 
     
