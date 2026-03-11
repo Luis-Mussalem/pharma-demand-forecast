@@ -1,3 +1,5 @@
+import argparse
+
 from pathlib import Path
 from datetime import datetime
 
@@ -12,6 +14,15 @@ from src.artifacts import (
 
 logger = get_logger()
 
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--config",
+        required=True,
+        help="Path to pipeline config file."
+    )
+
+    return parser.parse_args()
 
 def main():
     """
@@ -20,7 +31,9 @@ def main():
 
     logger.info("Inference pipeline started.")
 
-    config = load_config(Path("config/pipeline_config.yaml"))
+    args = parse_args()
+
+    config = load_config(Path(args.config))
 
     data_path = config["inference"]["data_path"]
 
