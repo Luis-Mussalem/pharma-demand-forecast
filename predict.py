@@ -3,7 +3,6 @@ from datetime import datetime
 
 from src.ingestion import load_data
 from src.config_loader import load_config
-from src.feature_registry import run_feature_pipeline
 from src.inference import load_model, run_inference
 from src.logger import get_logger
 from src.artifacts import (
