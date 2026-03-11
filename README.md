@@ -171,8 +171,6 @@ The pipeline follows a modular architecture designed to enforce data contracts, 
 
 Each module has a clearly defined responsibility:
 
-Each module has a clearly defined responsibility:
-
 - **main.py** — CLI entry point and pipeline orchestration  
 - **config_loader.py** — external configuration loader  
 - **ingestion.py** — controlled dataset loading  
