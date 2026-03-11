@@ -17,3 +17,6 @@ features:
 
 model:
   name: hist_gradient_boosting
+
+inference:
+  data_path: data/inference/future_data.csv
