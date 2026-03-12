@@ -12,7 +12,7 @@ def validate_inference_schema(df: pd.DataFrame) -> pd.DataFrame:
     Validate inference input schema before processing.
     """
 
-    logger.info("Validating inference input schema")
+    logger.info("Validating inference input schema...")
 
     config = load_config(Path("config/pipeline_config.yaml"))
 
@@ -30,7 +30,7 @@ def validate_inference_schema(df: pd.DataFrame) -> pd.DataFrame:
     
     if df[required_columns].isnull().values.any():
         raise ValueError(
-        "Inference input contains null values in required columns."
+            "Inference input contains null values in required columns."
     )
 
     if not df["DayOfWeek"].between(1, 7).all():
@@ -39,7 +39,7 @@ def validate_inference_schema(df: pd.DataFrame) -> pd.DataFrame:
     )
 
     if "Sales" in df.columns:
-        logger.info ("Sales columns detected in inference input and removed.")
+        logger.info("Sales columns detected in inference input and removed.")
         df = df.drop(columns=["Sales"])
 
     logger.info("Inference schema validated successfully.")
