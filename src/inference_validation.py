@@ -4,23 +4,24 @@ from pathlib import Path
 
 from src.logger import get_logger
 from src.config_loader import load_schema_version
-from src.schema_registry import INFERENCE_SCHEMA_V1
+from src.schema_registry import INFERENCE_SCHEMAS
 
 logger = get_logger()
 
 SCHEMA_CONFIG = load_schema_version(Path("config/schema_version.yaml"))
 
+ACTIVE_SCHEMA = INFERENCE_SCHEMAS[SCHEMA_CONFIG["inference_schema"]]
 
 def validate_inference_schema(df: pd.DataFrame) -> pd.DataFrame:
     """
     Validate inference input schema before processing.
     """
 
-    logger.info(f"Validating inference input schema."
+    logger.info(f"Validating inference input schema using "
                 f"{SCHEMA_CONFIG['inference_schema']}."    
             )
 
-    required_columns = INFERENCE_SCHEMA_V1["columns"]
+    required_columns = ACTIVE_SCHEMA["columns"]
 
     missing_columns = [
         column for column in required_columns
