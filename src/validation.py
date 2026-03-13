@@ -6,15 +6,17 @@ from pandas.api.types import (
 from src.logger import get_logger
 from pathlib import Path
 from src.config_loader import load_schema_version
-from src.schema_registry import TRAINING_SCHEMA_V1
+from src.schema_registry import TRAINING_SCHEMAS
 
 logger = get_logger()
 
 SCHEMA_CONFIG = load_schema_version(Path("config/schema_version.yaml"))
 
-EXPECTED_COLUMNS = TRAINING_SCHEMA_V1["columns"]
+ACTIVE_SCHEMA = TRAINING_SCHEMAS[SCHEMA_CONFIG["training_schema"]]
 
-EXPECTED_DTYPES = TRAINING_SCHEMA_V1["dtypes"]
+EXPECTED_COLUMNS = ACTIVE_SCHEMA["columns"]
+
+EXPECTED_DTYPES = ACTIVE_SCHEMA["dtypes"]
 
 def validate_columns(df: pd.DataFrame) -> None:
     """
@@ -77,7 +79,7 @@ def validate_dataset(df: pd.DataFrame) -> None:
     """
     Runs all validation checks.
     """
-    logger.info(f"Starting dataset validation using schema."
+    logger.info(f"Starting dataset validation using schema. "
                 f"{SCHEMA_CONFIG['training_schema']}..."    
             )
 
