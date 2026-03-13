@@ -4,8 +4,12 @@ from pandas.api.types import (
     is_categorical_dtype,
 )
 from src.logger import get_logger
+from pathlib import Path
+from src.config_loader import load_schema_version
 
 logger = get_logger()
+
+SCHEMA_CONFIG = load_schema_version(Path("config/schema_version.yaml"))
 
 EXPECTED_COLUMNS = [
     "Store",
@@ -94,7 +98,9 @@ def validate_dataset(df: pd.DataFrame) -> None:
     """
     Runs all validation checks.
     """
-    logger.info("Starting dataset validation...")
+    logger.info(f"Starting dataset validation using schema."
+                f"{SCHEMA_CONFIG['training_schema']}..."    
+            )
 
     validate_columns(df)
     validate_dtypes(df)
