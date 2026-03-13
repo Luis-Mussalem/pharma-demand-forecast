@@ -79,7 +79,7 @@ def validate_dataset(df: pd.DataFrame) -> None:
     """
     Runs all validation checks.
     """
-    logger.info(f"Starting dataset validation using schema. "
+    logger.info(f"Starting dataset validation using schema "
                 f"{SCHEMA_CONFIG['training_schema']}..."    
             )
 

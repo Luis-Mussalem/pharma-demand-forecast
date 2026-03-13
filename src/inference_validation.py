@@ -33,6 +33,9 @@ def validate_inference_schema(df: pd.DataFrame) -> pd.DataFrame:
             f"Missing required inference columns: {missing_columns}"
         )
     
+    if "Open" in df.columns:
+        df["Open"] = df["Open"].fillna(1)
+
     if df[required_columns].isnull().values.any():
         raise ValueError(
             "Inference input contains null values in required columns."

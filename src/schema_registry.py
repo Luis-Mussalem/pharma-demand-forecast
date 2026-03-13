@@ -16,7 +16,7 @@ TRAINING_SCHEMA_V1 = {
         "Date": "datetime64[ns]",
         "Sales": "int64",
         "Customers": "int64",
-        "Open": "int64",
+        "Open": "Int64",
         "Promo": "int64",
         "StateHoliday": "category",
         "SchoolHoliday": "int64",

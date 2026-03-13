@@ -7,35 +7,9 @@ from src.logger import get_logger
 from src.training import prepare_features, encode_categorical_features
 from src.feature_registry import run_feature_pipeline
 from src.config_loader import load_config
+from src.inference_validation import validate_inference_schema
 
 logger = get_logger()
-
-def validate_inference_schema(df: pd.DataFrame, config: dict) -> pd.DataFrame:
-    """
-    Validate inference input schema before preprocessing.
-    """
-
-    logger.info("Validating inference input schema.")
-
-    required_columns = config["inference"]["required_columns"]
-
-    missing_columns = [
-        column for column in required_columns
-        if column not in df.columns
-    ]
-
-    if missing_columns:
-        raise ValueError(
-            f"Missing required inference columns: {missing_columns}"
-        )
-
-    if "Sales" in df.columns:
-        logger.info("Sales column detected in inference input and removed.")
-        df = df.drop(columns=["Sales"])
-
-    logger.info("Inference schema validated successfully.")
-
-    return df
 
 def get_latest_model_path() -> str:
     """
@@ -107,7 +81,7 @@ def prepare_inference_data(df: pd.DataFrame) -> pd.DataFrame:
 
     config = load_config(Path("config/pipeline_config.yaml"))
 
-    df = validate_inference_schema(df, config)
+    df = validate_inference_schema(df)
 
     future_size = len(df)
     
