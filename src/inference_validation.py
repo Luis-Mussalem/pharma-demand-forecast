@@ -16,7 +16,7 @@ def validate_inference_schema(df: pd.DataFrame) -> pd.DataFrame:
     """
 
     logger.info(f"Validating inference input schema"
-                f"{SCHEMA_CONFIG['inference_schema']}..."    
+                f"{SCHEMA_CONFIG['inference_schema']}"    
             )
 
     config = load_config(Path("config/pipeline_config.yaml"))
