@@ -3,7 +3,8 @@ import pandas as pd
 from pathlib import Path
 
 from src.logger import get_logger
-from src.config_loader import load_config, load_schema_version
+from src.config_loader import load_schema_version
+from src.schema_registry import INFERENCE_SCHEMA_V1
 
 logger = get_logger()
 
@@ -15,13 +16,11 @@ def validate_inference_schema(df: pd.DataFrame) -> pd.DataFrame:
     Validate inference input schema before processing.
     """
 
-    logger.info(f"Validating inference input schema"
-                f"{SCHEMA_CONFIG['inference_schema']}"    
+    logger.info(f"Validating inference input schema."
+                f"{SCHEMA_CONFIG['inference_schema']}."    
             )
 
-    config = load_config(Path("config/pipeline_config.yaml"))
-
-    required_columns = config["inference"]["required_columns"]
+    required_columns = INFERENCE_SCHEMA_V1["columns"]
 
     missing_columns = [
         column for column in required_columns
