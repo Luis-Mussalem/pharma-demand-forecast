@@ -1,0 +1,3 @@
+version: 1
+training_schema: v1
+inference_schema: v1
