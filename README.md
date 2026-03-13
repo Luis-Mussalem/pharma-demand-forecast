@@ -28,7 +28,8 @@ The project is designed to demonstrate practical data engineering discipline app
 Main architectural principles:
 
 - YAML-driven execution  
-- strict validation before transformations  
+- strict validation before transformations
+- lightweight schema version governance  
 - temporal split before feature generation  
 - modular feature registry  
 - isolated training and inference pipelines  
@@ -88,7 +89,8 @@ Dedicated prediction pipeline through `predict.py`:
 - historical context reconstruction  
 - config-driven inference input  
 - prediction artifact persistence  
-- inference artifact archiving  
+- inference artifact archiving
+- schema-versioned inference contract validation  
 
 The current pipeline already supports full train → evaluation → artifact → inference execution
 
@@ -112,6 +114,12 @@ The pipeline follows a modular architecture designed to enforce data contracts, 
                              │
                              ▼
                 ┌─────────────────────────┐
+                │    schema_registry.py   │
+                │ Contract Definitions    │
+                └────────────┬────────────┘
+                             │
+                             ▼
+                ┌─────────────────────────┐
                 │       ingestion.py      │
                 │   Controlled Data Load  │
                 └────────────┬────────────┘
@@ -119,7 +127,7 @@ The pipeline follows a modular architecture designed to enforce data contracts, 
                              ▼
                 ┌─────────────────────────┐
                 │       validation.py     │
-                │   Data Contract Layer   │
+                │   Training Contract     │
                 └────────────┬────────────┘
                              │
                              ▼
@@ -151,16 +159,16 @@ The pipeline follows a modular architecture designed to enforce data contracts, 
                              │
                              ▼
                 ┌─────────────────────────┐
-                │ Baseline Performance    │
-                │ reproducible benchmark  │
-                └─────────────────────────┘
-                             │
-                             ▼
-                ┌─────────────────────────┐
                 │      artifacts.py       │
                 │ persistence + archive   │
                 │ diagnostics + benchmark │
-                └─────────────────────────┘
+                └────────────┬────────────┘
+                             │
+                             ▼
+                ┌─────────────────────────┐
+                │ inference_validation.py │
+                │ Inference Contract      │
+                └────────────┬────────────┘
                              │
                              ▼
                 ┌─────────────────────────┐
@@ -175,6 +183,8 @@ Each module has a clearly defined responsibility:
 - **config_loader.py** — external configuration loader  
 - **ingestion.py** — controlled dataset loading  
 - **validation.py** — schema and granularity enforcement  
+- **schema_registry.py** — explicit schema contracts for training and inference  
+- **inference_validation.py** — isolated inference contract enforcement 
 - **splitting.py** — deterministic temporal train-validation split  
 - **processing.py** — feature engineering pipeline (calendar, lag, rolling features)
 - **feature_registry.py** — config-driven feature orchestration  
@@ -206,7 +216,8 @@ pharma-demand-forecast/
 │   └── feature_importance_YYYYMMDD_HHMMSS.csv
 │
 ├── config/
-│   └── pipeline_config.yaml
+│   ├── pipeline_config.yaml
+│   └── schema_version.yaml
 │
 ├── data/
 │   ├── inference/
@@ -225,6 +236,8 @@ pharma-demand-forecast/
 ├── src/
 │   ├── ingestion.py
 │   ├── validation.py
+│   ├── inference_validation.py
+│   ├── schema_registry.py
 │   ├── splitting.py
 │   ├── processing.py
 │   ├── feature_registry.py
@@ -246,7 +259,7 @@ pharma-demand-forecast/
 
 ## Documentation
 Detailed technical decisions, trade-offs and architectural evolution are documented in:
-docs/egineering_decisions.md
+docs/engineering_decisions.md
 
 ---
 

@@ -1100,3 +1100,114 @@ Every correction must:
 ## Engineering Insight
 
 Pipeline maturity depends not only on adding layers, but on protecting internal clarity.
+
+## Day 9 — Inference Validation Layer
+
+### Decision
+
+Created a dedicated validation module for inference inputs.
+
+### Why
+
+Inference schema checks were previously embedded inside preprocessing logic, which mixed contract enforcement with feature preparation responsibilities.
+
+This made inference harder to reason about and created duplication risk.
+
+### Implementation
+
+Created:
+
+- `src/inference_validation.py`
+
+The module now validates:
+
+- required columns  
+- null detection  
+- semantic validation of `DayOfWeek`  
+- target leakage handling (`Sales`)  
+
+### Engineering Insight
+
+Inference contracts should be enforced explicitly before any feature generation begins.
+
+Training validation and inference validation must evolve independently because their contracts are structurally different.
+
+## Day 10 — Lightweight Schema Governance
+
+### Decision
+
+Introduced explicit schema registry and schema version selection for training and inference contracts.
+
+### Why
+
+Validation contracts had become stable enough to justify formal governance.
+
+Keeping schema definitions embedded directly inside validation modules would make future evolution harder.
+
+### Implementation
+
+Created:
+
+- `src/schema_registry.py`
+- `config/schema_version.yaml`
+
+Training and inference validations now read schema identity explicitly.
+
+### Engineering Insight
+
+Schema governance should begin only after contracts become stable.
+
+Premature schema abstraction would add indirection without real value.
+
+---
+
+## Day 10 — Inference Validation Consolidation
+
+### Decision
+
+Removed duplicated inference schema validation logic from orchestration layer.
+
+### Why
+
+A previous local validation function remained inside `inference.py`, duplicating logic already promoted to `inference_validation.py`.
+
+### Implementation
+
+Inference now uses a single validation source:
+
+- `src/inference_validation.py`
+
+### Engineering Insight
+
+Validation ownership must remain unique.
+
+Duplicated contract logic creates hidden divergence risk.
+
+---
+
+## Day 10 — Runtime Stabilization After Schema Refactor
+
+### Decision
+
+Completed full runtime validation after schema governance changes.
+
+### Issues Resolved
+
+- missing inference runtime config
+- missing history window config
+- known nulls in `Open`
+
+### Implementation
+
+Inference runtime now explicitly uses:
+
+- `data_path`
+- `history_window_days`
+
+Known null values in `Open` are filled before validation.
+
+### Engineering Insight
+
+Schema refactors must always end with full runtime validation.
+
+Architecture is only complete after train and inference execute without regression.
