@@ -24,3 +24,26 @@ def load_config(config_path: Path) -> dict:
         config = yaml.safe_load(file)
 
     return config
+
+def load_schema_version(schema_path: Path) -> dict:
+    """
+    Loads schema version configuration from a YAML file.
+
+    Parameters
+    ----------
+    schema_path : Path
+        Path to schema version YAML file.
+
+    Returns
+    -------
+    dict
+        Parsed schema version configuration.
+    """
+
+    if not schema_path.exists():
+        raise FileNotFoundError(f"Schema file not found: {schema_path}")
+
+    with open(schema_path, "r") as file:
+        schema_config = yaml.safe_load(file)
+
+    return schema_config
