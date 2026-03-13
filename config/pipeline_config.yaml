@@ -17,15 +17,3 @@ features:
 
 model:
   name: hist_gradient_boosting
-
-inference:
-  data_path: data/inference/future_data.csv
-  required_columns:
-    - Store
-    - DayOfWeek
-    - Date
-    - Open
-    - Promo
-    - StateHoliday
-    - SchoolHoliday
-  history_window_days: 14
