@@ -34,3 +34,7 @@ INFERENCE_SCHEMA_V1 = {
         "SchoolHoliday",
     ]
 }
+
+TRAINING_SCHEMAS = {
+    "v1": TRAINING_SCHEMA_V1,
+}
