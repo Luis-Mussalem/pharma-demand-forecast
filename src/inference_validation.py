@@ -3,16 +3,21 @@ import pandas as pd
 from pathlib import Path
 
 from src.logger import get_logger
-from src.config_loader import load_config 
+from src.config_loader import load_config, load_schema_version
 
 logger = get_logger()
+
+SCHEMA_CONFIG = load_schema_version(Path("config/schema_version.yaml"))
+
 
 def validate_inference_schema(df: pd.DataFrame) -> pd.DataFrame:
     """
     Validate inference input schema before processing.
     """
 
-    logger.info("Validating inference input schema...")
+    logger.info(f"Validating inference input schema"
+                f"{SCHEMA_CONFIG['inference_schema']}..."    
+            )
 
     config = load_config(Path("config/pipeline_config.yaml"))
 
