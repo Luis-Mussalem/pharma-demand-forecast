@@ -6,36 +6,15 @@ from pandas.api.types import (
 from src.logger import get_logger
 from pathlib import Path
 from src.config_loader import load_schema_version
+from src.schema_registry import TRAINING_SCHEMA_V1
 
 logger = get_logger()
 
 SCHEMA_CONFIG = load_schema_version(Path("config/schema_version.yaml"))
 
-EXPECTED_COLUMNS = [
-    "Store",
-    "DayOfWeek",
-    "Date",
-    "Sales",
-    "Customers",
-    "Open",
-    "Promo",
-    "StateHoliday",
-    "SchoolHoliday",
-]
+EXPECTED_COLUMNS = TRAINING_SCHEMA_V1["columns"]
 
-
-EXPECTED_DTYPES = {
-    "Store": "int64",
-    "DayOfWeek": "int64",
-    "Date": "datetime64[ns]",
-    "Sales": "int64",
-    "Customers": "int64",
-    "Open": "int64",
-    "Promo": "int64",
-    "StateHoliday": "category",
-    "SchoolHoliday": "int64",
-}
-
+EXPECTED_DTYPES = TRAINING_SCHEMA_V1["dtypes"]
 
 def validate_columns(df: pd.DataFrame) -> None:
     """
