@@ -19,6 +19,7 @@ from src.artifacts import (
     save_experiment_summary,
     generate_timestamp,
     update_benchmark_history,
+    update_champion_model,
 )
 from src.feature_registry import (
     run_feature_pipeline,
@@ -145,6 +146,7 @@ def main():
         archive_previous_artifacts()
 
         save_model(model, artifacts_dir, artifact_timestamp)
+        update_champion_model(f"model_{artifact_timestamp}.pkl")
         save_metrics(metrics, artifacts_dir, artifact_timestamp)
         save_predictions(validation_ready, predictions, artifacts_dir, artifact_timestamp)
         save_top_errors(validation_ready, predictions, artifacts_dir, artifact_timestamp)
