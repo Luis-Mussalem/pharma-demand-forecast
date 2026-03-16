@@ -9,3 +9,4 @@ artifacts/
 *.pkl
 *.json
 docs/archive/
+AGENTS.md

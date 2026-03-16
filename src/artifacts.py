@@ -2,6 +2,7 @@ import json
 import joblib
 import pandas as pd
 import shutil
+import yaml
 
 from datetime import datetime
 from pathlib import Path
@@ -313,12 +314,22 @@ def save_inference_predictions(
 def update_champion_model(model_filename: str) -> None:
     """
     Update champion model registry after successful training.
+    Preserve existing governamence keys in the registry.
     """
     
     registry_path = Path("config/model_registry.yaml")
+    registry = {}
+
+    if registry_path.exists():
+        with open(registry_path, "r") as file:
+            loaded = yaml.safe_load(file)
+            if isinstance(loaded, dict):
+                registry = loaded
+            
+    registry["champion_model"] = model_filename
 
     with open(registry_path, "w") as file:
-        file.write(f"champion_model: {model_filename}\n")
+        yaml.safe_dump(registry, file, sort_keys=False)
 
     logger.info(
         f"Champion model updated to {model_filename}"
