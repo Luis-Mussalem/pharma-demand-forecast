@@ -16,6 +16,11 @@ def get_latest_model_path() -> str:
     Retrieve latest trained model artifact automatically.
     """
 
+    registry = load_config(Path("config/model_registry.yaml"))
+
+    if registry["champion_model"] != "latest":
+         raise ValueError("Only 'latest' champion policy is suported currently.")
+    
     artifact_dir = Path("artifacts")
 
     model_files = sorted(
