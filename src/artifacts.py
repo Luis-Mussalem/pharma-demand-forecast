@@ -309,3 +309,17 @@ def save_inference_predictions(
     predictions.to_csv(output_path, index=False)
 
     logger.info(f"Inference predictions saved at {output_path}")
+
+def update_champion_model(model_filename: str) -> None:
+    """
+    Update champion model registry after successful training.
+    """
+    
+    registry_path = Path("config/model_registry.yaml")
+
+    with open(registry_path, "w") as file:
+        file.write(f"champion_model: {model_filename}\n")
+
+    logger.info(
+        f"Champion model updated to {model_filename}"
+    )
