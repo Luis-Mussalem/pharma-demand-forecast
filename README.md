@@ -29,7 +29,8 @@ Main architectural principles:
 
 - YAML-driven execution  
 - strict validation before transformations
-- lightweight schema version governance  
+- lightweight schema version governance
+- lightweight champion model governance 
 - temporal split before feature generation  
 - modular feature registry  
 - isolated training and inference pipelines  
@@ -114,6 +115,12 @@ The pipeline follows a modular architecture designed to enforce data contracts, 
                              │
                              ▼
                 ┌─────────────────────────┐
+                │   model_registry.yaml   │
+                │  Champion Model Policy  │
+                └────────────┬────────────┘
+                             │
+                             ▼
+                ┌─────────────────────────┐
                 │    schema_registry.py   │
                 │ Contract Definitions    │
                 └────────────┬────────────┘
@@ -190,8 +197,8 @@ Each module has a clearly defined responsibility:
 - **feature_registry.py** — config-driven feature orchestration  
 - **training.py** — modeling preparation and baseline fitting  
 - **evaluation.py** — validation scoring and prediction generation  
-- **artifacts.py** — versioned persistence, benchmark tracking, diagnostics persistence and automatic artifact archiving  
-- **predict.py** — isolated inference execution using latest champion model
+- **artifacts.py** — versioned persistence, benchmark tracking, diagnostics persistence, artifact archiving and champion promotion
+- **predict.py** — isolated inference execution using registry-governed champion model
 
 ---
 
@@ -217,7 +224,8 @@ pharma-demand-forecast/
 │
 ├── config/
 │   ├── pipeline_config.yaml
-│   └── schema_version.yaml
+│   ├── schema_version.yaml
+│   └── model_registry.yaml
 │
 ├── data/
 │   ├── inference/

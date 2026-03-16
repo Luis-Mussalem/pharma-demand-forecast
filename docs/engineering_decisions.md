@@ -1211,3 +1211,54 @@ Known null values in `Open` are filled before validation.
 Schema refactors must always end with full runtime validation.
 
 Architecture is only complete after train and inference execute without regression.
+
+## Day 11 — Lightweight Model Governance
+
+### Decision
+
+Introduced explicit champion model governance for inference.
+
+### Why
+
+Inference previously relied on the latest saved artifact implicitly.
+
+This created ambiguity because latest artifact does not necessarily mean promoted model.
+
+### Implementation
+
+Created:
+
+- `config/model_registry.yaml`
+
+Inference now supports two policies:
+
+- `latest`
+- explicit model filename
+
+### Engineering Insight
+
+Model selection policy should become explicit before introducing full model registry complexity.
+
+---
+
+## Day 11 — Champion Promotion Lifecycle
+
+### Decision
+
+Training now updates champion model automatically after successful model persistence.
+
+### Why
+
+Once champion selection became explicit, training also needed to own model promotion.
+
+### Implementation
+
+Added champion promotion inside artifact lifecycle.
+
+After model save:
+
+- registry is updated automatically
+
+### Engineering Insight
+
+A prediction system becomes operationally coherent only when training promotes and inference consumes the same governed artifact.
