@@ -18,9 +18,20 @@ def get_latest_model_path() -> str:
 
     registry = load_config(Path("config/model_registry.yaml"))
 
-    if registry["champion_model"] != "latest":
-         raise ValueError("Only 'latest' champion policy is suported currently.")
-    
+    champion_model = registry["champion_model"]
+
+    if champion_model != "latest":
+        model_path = Path("artifacts") / champion_model
+
+        if not model_path.exists():
+            raise FileNotFoundError(
+                f"Champion model not found: {model_path}"
+            )
+
+        logger.info(f"Champion model selected: {model_path}")
+
+        return str(model_path)
+
     artifact_dir = Path("artifacts")
 
     model_files = sorted(
