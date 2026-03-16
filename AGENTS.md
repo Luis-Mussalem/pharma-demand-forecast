@@ -591,6 +591,8 @@ exact executable git add + git commit command block
 
 what this unlocks next
 
+When closing a "Day", review and update docs/engineering_decisions.md, README.md and AGENTS.md to keep documentation, the interaction contract, and governance aligned.
+
 comente feito para prosseguirmos
 
 
