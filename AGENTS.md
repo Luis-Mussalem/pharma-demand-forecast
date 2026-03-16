@@ -585,13 +585,27 @@ Preferred Closure Inside This Project
 
 Implementation answers must always finish with:
 
-exact test command
+- exact test command
+- exact executable git add + git commit command block
+- what this unlocks next
 
-exact executable git add + git commit command block
+Day Closure Checklist (mandatory)
+When closing a "Day", perform and record all items below before marking the Day complete:
 
-what this unlocks next
+- Update `docs/engineering_decisions.md` with a "Day X" block that:
+  - lists decisions implemented during the day,
+  - lists verification commands and their results,
+  - records any remaining TODOs and next steps.
+- Update `README.md` 
+- Update `AGENTS.md` if the agent contract or workflow rules changed.
+- Add/Update automated tests that exercise new governance or runtime behavior.
+- Run required local verification:
+  - governance tests: `python -m unittest discover -s tests -p "test_model_governance.py" -v`
+  - optional pipeline smoke: `python main.py --config config/pipeline_config.yaml`
+- Commit documentation changes with an exact git add + git commit block.
+- Push commits and tag to remote.
 
-When closing a "Day", review and update docs/engineering_decisions.md, README.md and AGENTS.md to keep documentation, the interaction contract, and governance aligned.
+Always include a short "closure note" in `docs/engineering_decisions.md` describing verification results and tag name.
 
 comente feito para prosseguirmos
 

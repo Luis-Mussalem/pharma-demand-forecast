@@ -83,9 +83,9 @@ Generated artifacts:
 
 ### Inference Layer
 
-Dedicated prediction pipeline through `predict.py`:
+Dedicated prediction pipeline through predict.py:
 
-- latest model auto-loading  
+- registry-governed champion loading (explicit champion file or latest policy)  
 - inference schema validation  
 - historical context reconstruction  
 - config-driven inference input  
@@ -271,12 +271,33 @@ docs/engineering_decisions.md
 
 ---
 
+## Project Status
+
+- Champion Governance: config/model_registry.yaml introduced to record the promoted champion model (champion_model key).
+- Training → Promotion: src/artifacts.py updates the registry after successful model save.
+- Non-destructive Registry Update: champion update preserves existing governance keys (for example: promotion_mode, notes).
+- Inference Consumption: src/inference.py reads config/model_registry.yaml and supports:
+  - explicit champion filename (for example: model_YYYYMMDD_HHMMSS.pkl)
+  - latest policy (resolve newest artifact in artifacts/)
+- Regression Tests: tests/test_model_governance.py protects champion selection and promotion behavior.
+- Agent Contract & Decision Log: AGENTS.md and docs/engineering_decisions.md include Day 11 closure updates.
+
+### Verification (recommended)
+- Run governance tests:
+  - python -m unittest discover -s tests -p "test_model_governance.py" -v
+  - Expected outcome: tests pass (OK).
+- Optional pipeline smoke:
+  - python main.py --config config/pipeline_config.yaml
+- Optional inference quick-run:
+  - python predict.py --config config/pipeline_config.yaml
+
+---
+
 # Planned Pipeline Evolution
 
 Next stages of the project include:
 
-- Lightweight model registry
-- Champion/challenger promotion logic
+- Benchmark-aware champion/challenger promotion rules
 - Batch inference orchestration
 - Simple drift monitoring
 
