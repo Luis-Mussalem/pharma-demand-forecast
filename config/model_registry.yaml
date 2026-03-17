@@ -1,1 +1,6 @@
 champion_model: model_20260316_161656.pkl
+promotion_policy:
+  metric: MAE
+  direction: lower
+  min_relative_improvement: 0.01
+  min_absolute_improvement: 1.0

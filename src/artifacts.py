@@ -311,6 +311,64 @@ def save_inference_predictions(
 
     logger.info(f"Inference predictions saved at {output_path}")
 
+def should_promote(
+    new_metrics: dict,
+    current_metrics: dict | None,
+    policy: dict
+) -> bool:
+    """
+    Decide if challenger should be promoted to champion based on metric policy.
+    """
+
+    if current_metrics is None:
+        logger.info("No champion metrics found. Challenger will be promoted.")
+        return True
+
+    metric = policy.get("metric", "MAE")
+    direction = policy.get("direction", "lower")
+    min_relative_improvement = float(policy.get("min_relative_improvement", 0.0))
+    min_absolute_improvement = float(policy.get("min_absolute_improvement", 0.0))
+
+    if metric not in new_metrics:
+        raise KeyError(f"Metric '{metric}' missing in challenger metrics.")
+    if metric not in current_metrics:
+        raise KeyError(f"Metric '{metric}' missing in champion metrics.")
+
+    new_value = float(new_metrics[metric])
+    current_value = float(current_metrics[metric])
+
+    if direction == "lower":
+        absolute_improvement = current_value - new_value
+        baseline = current_value
+    elif direction == "higher":
+        absolute_improvement = new_value - current_value
+        baseline = abs(current_value)
+    else:
+        raise ValueError("promotion_policy.direction must be 'lower' or 'higher'.")
+
+    if baseline == 0:
+        relative_improvement = float("inf") if absolute_improvement > 0 else 0.0
+    else:
+        relative_improvement = absolute_improvement / baseline
+
+    promote = (
+        absolute_improvement >= min_absolute_improvement
+        and relative_improvement >= min_relative_improvement
+    )
+
+    logger.info(
+        "Promotion decision | metric=%s | current=%.6f | new=%.6f | abs_impr=%.6f | rel_impr=%.6f | promote=%s",
+        metric,
+        current_value,
+        new_value,
+        absolute_improvement,
+        relative_improvement,
+        promote,
+    )
+
+    return promote
+
+
 def update_champion_model(model_filename: str) -> None:
     """
     Update champion model registry after successful training.
