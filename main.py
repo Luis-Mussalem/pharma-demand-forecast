@@ -20,6 +20,8 @@ from src.artifacts import (
     generate_timestamp,
     update_benchmark_history,
     update_champion_model,
+    should_promote,
+    load_champion_metrics,
 )
 from src.feature_registry import (
     run_feature_pipeline,
@@ -140,13 +142,29 @@ def main():
         logger.info(f"Model evaluation metrics: {metrics}")
 
         artifacts_dir = Path("artifacts")
-
         artifact_timestamp = generate_timestamp()
-        
-        archive_previous_artifacts()
+
+        registry = load_config(Path("config/model_registry.yaml"))
+        current_champion_metrics = load_champion_metrics(registry)
+
+        archive_previous_artifacts(
+            skip_model=registry.get("champion_model")
+        )
 
         save_model(model, artifacts_dir, artifact_timestamp)
-        update_champion_model(f"model_{artifact_timestamp}.pkl")
+
+        if should_promote(
+            new_metrics=metrics,
+            current_metrics=current_champion_metrics,
+            policy=registry.get("promotion_policy", {}),
+        ):
+            update_champion_model(f"model_{artifact_timestamp}.pkl")
+        else:
+            logger.info(
+                "Challenger did not meet promotion criteria. Champion retained: %s",
+                registry.get("champion_model"),
+            )
+
         save_metrics(metrics, artifacts_dir, artifact_timestamp)
         save_predictions(validation_ready, predictions, artifacts_dir, artifact_timestamp)
         save_top_errors(validation_ready, predictions, artifacts_dir, artifact_timestamp)

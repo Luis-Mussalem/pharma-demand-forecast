@@ -1,4 +1,8 @@
+import json
+import os
+import tempfile
 import unittest
+from pathlib import Path
 
 from src.artifacts import should_promote
 
@@ -75,6 +79,56 @@ class TestPromotionPolicy(unittest.TestCase):
                 current_metrics=current_metrics,
                 policy=invalid_policy,
             )
+
+
+class TestLoadChampionMetrics(unittest.TestCase):
+    def setUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.repo_root = Path(self.temp_dir.name)
+        self.original_cwd = Path.cwd()
+
+        (self.repo_root / "artifacts").mkdir(parents=True, exist_ok=True)
+        os.chdir(self.repo_root)
+
+    def tearDown(self):
+        os.chdir(self.original_cwd)
+        self.temp_dir.cleanup()
+
+    def test_returns_none_when_no_champion_registered(self):
+        from src.artifacts import load_champion_metrics
+
+        result = load_champion_metrics({})
+
+        self.assertIsNone(result)
+
+    def test_returns_none_when_champion_is_latest(self):
+        from src.artifacts import load_champion_metrics
+
+        result = load_champion_metrics({"champion_model": "latest"})
+
+        self.assertIsNone(result)
+
+    def test_returns_none_when_metrics_file_missing(self):
+        from src.artifacts import load_champion_metrics
+
+        result = load_champion_metrics(
+            {"champion_model": "model_20260317_100000.pkl"}
+        )
+
+        self.assertIsNone(result)
+
+    def test_returns_metrics_when_file_exists(self):
+        from src.artifacts import load_champion_metrics
+
+        metrics_path = self.repo_root / "artifacts" / "metrics_20260317_100000.json"
+        metrics_path.write_text(json.dumps({"MAE": 508.0, "RMSE": 779.0}))
+
+        result = load_champion_metrics(
+            {"champion_model": "model_20260317_100000.pkl"}
+        )
+
+        self.assertEqual(result["MAE"], 508.0)
+        self.assertEqual(result["RMSE"], 779.0)
 
 
 if __name__ == "__main__":

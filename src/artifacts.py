@@ -19,9 +19,10 @@ def generate_timestamp() -> str:
 
     return datetime.now().strftime("%Y%m%d_%H%M%S")
 
-def archive_previous_artifacts():
+def archive_previous_artifacts(skip_model: str | None = None):
     """
     Move previous artifacts to archive folders before saving new outputs.
+    Preserves the current champion model file when skip_model is provided.
     """
 
     logger.info("Archiving previous artifacts.")
@@ -42,6 +43,10 @@ def archive_previous_artifacts():
     for file_path in artifacts_dir.iterdir():
 
         if file_path.name == "benchmark_history.csv":
+            continue
+
+        if skip_model and file_path.name == skip_model:
+            logger.info(f"Retaining champion model in artifacts: {file_path.name}")
             continue
 
         for prefix, destination in folder_mapping.items():
@@ -310,6 +315,28 @@ def save_inference_predictions(
     predictions.to_csv(output_path, index=False)
 
     logger.info(f"Inference predictions saved at {output_path}")
+
+def load_champion_metrics(registry: dict) -> dict | None:
+    """
+    Load metrics artifact associated with the current champion model.
+    Returns None if no champion is registered or metrics file is not found.
+    """
+
+    champion = registry.get("champion_model")
+
+    if not champion or champion == "latest":
+        return None
+
+    name = Path(champion).stem
+    timestamp = name[len("model_"):]
+    metrics_path = Path("artifacts") / f"metrics_{timestamp}.json"
+
+    if not metrics_path.exists():
+        logger.info(f"Champion metrics file not found: {metrics_path}")
+        return None
+
+    with open(metrics_path, "r") as file:
+        return json.load(file)
 
 def should_promote(
     new_metrics: dict,
