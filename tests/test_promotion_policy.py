@@ -2,12 +2,15 @@ import json
 import os
 import tempfile
 import unittest
+import pandas as pd
 from pathlib import Path
 
 from src.artifacts import (
     archive_previous_artifacts,
     load_champion_metrics,
+    save_experiment_summary,
     should_promote,
+    update_benchmark_history,
 )
 
 
@@ -173,6 +176,94 @@ class TestLoadChampionMetrics(unittest.TestCase):
 
         self.assertEqual(result["MAE"], 507.5)
         self.assertEqual(result["RMSE"], 778.1)
+
+class TestPromotionAuditArtifacts(unittest.TestCase):
+    def setUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.repo_root = Path(self.temp_dir.name)
+        self.original_cwd = Path.cwd()
+
+        (self.repo_root / "artifacts").mkdir(parents=True, exist_ok=True)
+        os.chdir(self.repo_root)
+
+    def tearDown(self):
+        os.chdir(self.original_cwd)
+        self.temp_dir.cleanup()
+
+    def test_experiment_summary_includes_promotion_audit(self):
+        promotion_audit = {
+            "promoted": True,
+            "champion_before": "model_20260316_161656.pkl",
+            "champion_after": "model_20260317_101500.pkl",
+            "metric": "MAE",
+            "challenger_metric_value": 503.0,
+            "champion_metric_value": 508.0,
+        }
+
+        save_experiment_summary(
+            metrics={"MAE": 503.0, "RMSE": 779.0},
+            features_used=["calendar", "lag", "rolling"],
+            model_name="HistGradientBoostingRegressor",
+            train_rows=1000,
+            validation_rows=200,
+            artifacts_dir=self.repo_root / "artifacts",
+            timestamp="20260317_101500",
+            promotion_audit=promotion_audit,
+        )
+
+        summary_path = (
+            self.repo_root / "artifacts" / "experiment_summary_20260317_101500.json"
+        )
+
+        with open(summary_path, "r") as file:
+            payload = json.load(file)
+
+        self.assertTrue(payload["promotion_audit"]["promoted"])
+        self.assertEqual(
+            payload["promotion_audit"]["champion_before"],
+            "model_20260316_161656.pkl",
+        )
+        self.assertEqual(
+            payload["promotion_audit"]["champion_after"],
+            "model_20260317_101500.pkl",
+        )
+
+    def test_benchmark_history_includes_promotion_audit_columns(self):
+        promotion_audit = {
+            "promoted": False,
+            "champion_before": "model_20260316_161656.pkl",
+            "champion_after": "model_20260316_161656.pkl",
+            "metric": "MAE",
+            "challenger_metric_value": 509.0,
+            "champion_metric_value": 508.0,
+        }
+
+        update_benchmark_history(
+            metrics={"MAE": 509.0, "RMSE": 781.0},
+            features_used=["calendar", "lag"],
+            model_name="HistGradientBoostingRegressor",
+            train_rows=1000,
+            validation_rows=200,
+            artifacts_dir=self.repo_root / "artifacts",
+            timestamp="20260317_102000",
+            promotion_audit=promotion_audit,
+        )
+
+        benchmark_path = self.repo_root / "artifacts" / "benchmark_history.csv"
+        benchmark = pd.read_csv(benchmark_path)
+
+        self.assertEqual(benchmark.loc[0, "promoted_to_champion"], False)
+        self.assertEqual(
+            benchmark.loc[0, "champion_before"],
+            "model_20260316_161656.pkl",
+        )
+        self.assertEqual(
+            benchmark.loc[0, "champion_after"],
+            "model_20260316_161656.pkl",
+        )
+        self.assertEqual(benchmark.loc[0, "promotion_metric"], "MAE")
+        self.assertEqual(benchmark.loc[0, "challenger_metric_value"], 509.0)
+        self.assertEqual(benchmark.loc[0, "champion_metric_value"], 508.0)
 
 if __name__ == "__main__":
     unittest.main()
