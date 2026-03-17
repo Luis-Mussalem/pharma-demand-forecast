@@ -1314,8 +1314,16 @@ This could overwrite a valid champion with a weaker challenger.
   - relative threshold fail
   - invalid direction
   - champion metrics loading behavior
+- Persisted promotion decision audit in artifacts:
+  - `promotion_audit` section in `experiment_summary_*.json`
+  - promotion columns in `benchmark_history.csv`
+- Added tests for promotion audit persistence in `tests/test_promotion_policy.py`.
 
 ### Engineering Insight
 
 Model governance is only meaningful when promotion is explicit, testable, and auditable.
 By separating decision logic from orchestration, we preserve ownership boundaries and reduce regression risk.
+
+### Verification
+- `python -m unittest discover -s tests -p "test_promotion_policy.py" -v` → `OK`
+- `python -m unittest discover -s tests -p "test_model_governance.py" -v` → `OK`

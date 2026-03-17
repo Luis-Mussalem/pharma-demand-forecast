@@ -300,7 +300,7 @@ docs/engineering_decisions.md
 
 Next stages of the project include:
 
-- Benchmark-aware champion/challenger promotion rules
+- Promotion audit explainability (reason codes and decision trace)
 - Batch inference orchestration
 - Simple drift monitoring
 
