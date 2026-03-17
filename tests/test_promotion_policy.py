@@ -4,7 +4,11 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from src.artifacts import should_promote
+from src.artifacts import (
+    archive_previous_artifacts,
+    load_champion_metrics,
+    should_promote,
+)
 
 
 class TestPromotionPolicy(unittest.TestCase):
@@ -81,7 +85,7 @@ class TestPromotionPolicy(unittest.TestCase):
             )
 
 
-class TestLoadChampionMetrics(unittest.TestCase):
+class TestArchivePreviousArtifacts(unittest.TestCase):
     def setUp(self):
         self.temp_dir = tempfile.TemporaryDirectory()
         self.repo_root = Path(self.temp_dir.name)
@@ -94,41 +98,29 @@ class TestLoadChampionMetrics(unittest.TestCase):
         os.chdir(self.original_cwd)
         self.temp_dir.cleanup()
 
-    def test_returns_none_when_no_champion_registered(self):
-        from src.artifacts import load_champion_metrics
+    def test_keeps_champion_model_and_metrics_in_active_artifacts(self):
+        champion_model = "model_20260317_100000.pkl"
+        champion_metrics = "metrics_20260317_100000.json"
 
-        result = load_champion_metrics({})
+        (self.repo_root / "artifacts" / champion_model).write_text("champion")
+        (self.repo_root / "artifacts" / champion_metrics).write_text("{}")
 
-        self.assertIsNone(result)
+        (self.repo_root / "artifacts" / "model_20260316_090000.pkl").write_text("old")
+        (self.repo_root / "artifacts" / "metrics_20260316_090000.json").write_text("{}")
+        (self.repo_root / "artifacts" / "benchmark_history.csv").write_text("header\n")
 
-    def test_returns_none_when_champion_is_latest(self):
-        from src.artifacts import load_champion_metrics
+        archive_previous_artifacts(skip_model=champion_model)
 
-        result = load_champion_metrics({"champion_model": "latest"})
+        self.assertTrue((self.repo_root / "artifacts" / champion_model).exists())
+        self.assertTrue((self.repo_root / "artifacts" / champion_metrics).exists())
 
-        self.assertIsNone(result)
-
-    def test_returns_none_when_metrics_file_missing(self):
-        from src.artifacts import load_champion_metrics
-
-        result = load_champion_metrics(
-            {"champion_model": "model_20260317_100000.pkl"}
+        self.assertTrue(
+            (self.repo_root / "archive" / "models" / "model_20260316_090000.pkl").exists()
         )
-
-        self.assertIsNone(result)
-
-    def test_returns_metrics_when_file_exists(self):
-        from src.artifacts import load_champion_metrics
-
-        metrics_path = self.repo_root / "artifacts" / "metrics_20260317_100000.json"
-        metrics_path.write_text(json.dumps({"MAE": 508.0, "RMSE": 779.0}))
-
-        result = load_champion_metrics(
-            {"champion_model": "model_20260317_100000.pkl"}
+        self.assertTrue(
+            (self.repo_root / "archive" / "metrics" / "metrics_20260316_090000.json").exists()
         )
-
-        self.assertEqual(result["MAE"], 508.0)
-        self.assertEqual(result["RMSE"], 779.0)
+        self.assertTrue((self.repo_root / "artifacts" / "benchmark_history.csv").exists())
 
 
 if __name__ == "__main__":

@@ -22,13 +22,23 @@ def generate_timestamp() -> str:
 def archive_previous_artifacts(skip_model: str | None = None):
     """
     Move previous artifacts to archive folders before saving new outputs.
-    Preserves the current champion model file when skip_model is provided.
+    Preserves champion model and its metrics file when skip_model is provided.
     """
 
     logger.info("Archiving previous artifacts.")
 
     artifacts_dir = Path("artifacts")
     archive_dir = Path("archive")
+
+    skip_files = set()
+
+    if skip_model and skip_model != "latest":
+        skip_files.add(skip_model)
+
+        model_stem = Path(skip_model).stem
+        if model_stem.startswith("model_"):
+            champion_timestamp = model_stem[len("model_"):]
+            skip_files.add(f"metrics_{champion_timestamp}.json")
 
     folder_mapping = {
         "model_": "models",
@@ -37,7 +47,7 @@ def archive_previous_artifacts(skip_model: str | None = None):
         "feature_importance_": "metrics",
         "predictions_": "predictions",
         "top_errors_": "diagnostics",
-        "error_by_store_": "diagnostics"
+        "error_by_store_": "diagnostics",
     }
 
     for file_path in artifacts_dir.iterdir():
@@ -45,8 +55,8 @@ def archive_previous_artifacts(skip_model: str | None = None):
         if file_path.name == "benchmark_history.csv":
             continue
 
-        if skip_model and file_path.name == skip_model:
-            logger.info(f"Retaining champion model in artifacts: {file_path.name}")
+        if file_path.name in skip_files:
+            logger.info(f"Retaining champion artifact in active folder: {file_path.name}")
             continue
 
         for prefix, destination in folder_mapping.items():
@@ -319,6 +329,7 @@ def save_inference_predictions(
 def load_champion_metrics(registry: dict) -> dict | None:
     """
     Load metrics artifact associated with the current champion model.
+    Looks in active artifacts first, then archive fallback.
     Returns None if no champion is registered or metrics file is not found.
     """
 
@@ -327,16 +338,29 @@ def load_champion_metrics(registry: dict) -> dict | None:
     if not champion or champion == "latest":
         return None
 
-    name = Path(champion).stem
-    timestamp = name[len("model_"):]
-    metrics_path = Path("artifacts") / f"metrics_{timestamp}.json"
+    model_stem = Path(champion).stem
 
-    if not metrics_path.exists():
-        logger.info(f"Champion metrics file not found: {metrics_path}")
+    if not model_stem.startswith("model_"):
+        logger.info(f"Champion model name does not follow expected pattern: {champion}")
         return None
 
-    with open(metrics_path, "r") as file:
-        return json.load(file)
+    timestamp = model_stem[len("model_"):]
+    metrics_filename = f"metrics_{timestamp}.json"
+
+    candidate_paths = [
+        Path("artifacts") / metrics_filename,
+        Path("archive") / "metrics" / metrics_filename,
+    ]
+
+    for metrics_path in candidate_paths:
+        if metrics_path.exists():
+            with open(metrics_path, "r") as file:
+                return json.load(file)
+
+    logger.info(
+        f"Champion metrics file not found in active or archive folders: {metrics_filename}"
+    )
+    return None
 
 def should_promote(
     new_metrics: dict,
