@@ -153,17 +153,38 @@ def main():
 
         save_model(model, artifacts_dir, artifact_timestamp)
 
-        if should_promote(
+        promoted = should_promote(
             new_metrics=metrics,
             current_metrics=current_champion_metrics,
             policy=registry.get("promotion_policy", {}),
-        ):
-            update_champion_model(f"model_{artifact_timestamp}.pkl")
+        )
+
+        challenger_model_name = f"model_{artifact_timestamp}.pkl"
+        champion_before = registry.get("champion_model")
+        promotion_metric = registry.get("promotion_policy", {}).get("metric", "MAE")
+
+        if promoted:
+            update_champion_model(challenger_model_name)
+            champion_after = challenger_model_name
         else:
             logger.info(
                 "Challenger did not meet promotion criteria. Champion retained: %s",
-                registry.get("champion_model"),
+                champion_before,
             )
+            champion_after = champion_before
+
+        promotion_audit = {
+            "promoted": promoted,
+            "champion_before": champion_before,
+            "champion_after": champion_after,
+            "metric": promotion_metric,
+            "challenger_metric_value": metrics.get(promotion_metric),
+            "champion_metric_value": (
+                None
+                if current_champion_metrics is None
+                else current_champion_metrics.get(promotion_metric)
+            ),
+        }
 
         save_metrics(metrics, artifacts_dir, artifact_timestamp)
         save_predictions(validation_ready, predictions, artifacts_dir, artifact_timestamp)
@@ -182,6 +203,7 @@ def main():
             validation_rows=len(validation_df),
             artifacts_dir=artifacts_dir,
             timestamp=artifact_timestamp,
+            promotion_audit=promotion_audit,
         )
         update_benchmark_history(
             metrics=metrics,
@@ -191,6 +213,7 @@ def main():
             validation_rows=len(validation_df),
             artifacts_dir=artifacts_dir,
             timestamp=artifact_timestamp,
+            promotion_audit=promotion_audit,
         )
         save_feature_importance(
             importance_df,

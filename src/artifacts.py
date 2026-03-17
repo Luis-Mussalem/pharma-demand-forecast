@@ -190,6 +190,7 @@ def save_experiment_summary(
     validation_rows: int,
     artifacts_dir: Path,
     timestamp: str,
+    promotion_audit: dict | None = None,
 ):
     """
     Save consolidated experiment metadata.
@@ -208,6 +209,9 @@ def save_experiment_summary(
             "RMSE": metrics["RMSE"],
         },
     }
+
+    if promotion_audit is not None:
+        experiment_summary["promotion_audit"] = promotion_audit
 
     output_path = artifacts_dir / f"experiment_summary_{timestamp}.json"
 
@@ -258,6 +262,7 @@ def update_benchmark_history(
     validation_rows: int,
     artifacts_dir: Path,
     timestamp: str,
+    promotion_audit: dict | None = None,
 ):
     """
     Append current experiment to benchmark history.
@@ -267,19 +272,29 @@ def update_benchmark_history(
 
     benchmark_path = artifacts_dir / "benchmark_history.csv"
 
-    benchmark_row = pd.DataFrame(
-        [
+    benchmark_entry = {
+        "timestamp": timestamp,
+        "model": model_name,
+        "features_used": "|".join(features_used),
+        "MAE": metrics["MAE"],
+        "RMSE": metrics["RMSE"],
+        "train_rows": train_rows,
+        "validation_rows": validation_rows,
+    }
+
+    if promotion_audit is not None:
+        benchmark_entry.update(
             {
-                "timestamp": timestamp,
-                "model": model_name,
-                "features_used": "|".join(features_used),
-                "MAE": metrics["MAE"],
-                "RMSE": metrics["RMSE"],
-                "train_rows": train_rows,
-                "validation_rows": validation_rows,
+                "promoted_to_champion": promotion_audit["promoted"],
+                "champion_before": promotion_audit["champion_before"],
+                "champion_after": promotion_audit["champion_after"],
+                "promotion_metric": promotion_audit["metric"],
+                "challenger_metric_value": promotion_audit["challenger_metric_value"],
+                "champion_metric_value": promotion_audit["champion_metric_value"],
             }
-        ]
-    )
+        )
+
+    benchmark_row = pd.DataFrame([benchmark_entry])
 
     if benchmark_path.exists():
         existing = pd.read_csv(benchmark_path)
