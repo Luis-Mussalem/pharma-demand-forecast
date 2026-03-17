@@ -1281,4 +1281,41 @@ Formally close Day 11 by recording final status and verification artifacts.
 
 ### Action / Release
 - Commit documentation updates.
-- Tag repository: `day11-complete`
+
+## Day 12 — Benchmark-Aware Champion Promotion
+
+### Decision
+
+Introduced metric-aware champion promotion policy so training promotes challenger only when improvement thresholds are met.
+
+### Why
+
+Day 11 established explicit champion governance, but promotion was still unconditional.
+This could overwrite a valid champion with a weaker challenger.
+
+### Implementation
+
+- Added `promotion_policy` in `config/model_registry.yaml` with:
+  - `metric`
+  - `direction`
+  - `min_relative_improvement`
+  - `min_absolute_improvement`
+- Added `should_promote()` in `src/artifacts.py` as pure decision function.
+- Added `load_champion_metrics()` in `src/artifacts.py` to resolve current champion baseline metrics.
+- Updated `archive_previous_artifacts(skip_model=...)` to preserve current champion file during artifact rotation.
+- Integrated promotion decision in `main.py`:
+  - evaluate challenger metrics
+  - compare against champion metrics
+  - update champion only when policy returns `True`
+- Added regression coverage in `tests/test_promotion_policy.py`:
+  - no champion baseline
+  - threshold met
+  - absolute threshold fail
+  - relative threshold fail
+  - invalid direction
+  - champion metrics loading behavior
+
+### Engineering Insight
+
+Model governance is only meaningful when promotion is explicit, testable, and auditable.
+By separating decision logic from orchestration, we preserve ownership boundaries and reduce regression risk.

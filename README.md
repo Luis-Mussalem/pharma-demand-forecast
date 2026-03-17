@@ -273,23 +273,26 @@ docs/engineering_decisions.md
 
 ## Project Status
 
-- Champion Governance: config/model_registry.yaml introduced to record the promoted champion model (champion_model key).
-- Training → Promotion: src/artifacts.py updates the registry after successful model save.
-- Non-destructive Registry Update: champion update preserves existing governance keys (for example: promotion_mode, notes).
-- Inference Consumption: src/inference.py reads config/model_registry.yaml and supports:
-  - explicit champion filename (for example: model_YYYYMMDD_HHMMSS.pkl)
-  - latest policy (resolve newest artifact in artifacts/)
-- Regression Tests: tests/test_model_governance.py protects champion selection and promotion behavior.
-- Agent Contract & Decision Log: AGENTS.md and docs/engineering_decisions.md include Day 11 closure updates.
+- Champion Governance: `config/model_registry.yaml` controls champion selection through explicit model reference.
+- Promotion Policy: promotion is now benchmark-aware and threshold-based.
+- Promotion Decision Logic: `src/artifacts.py` defines `should_promote()` to evaluate challenger vs champion.
+- Champion Baseline Resolution: `src/artifacts.py` loads champion metrics through `load_champion_metrics()`.
+- Artifact Rotation Safety: `archive_previous_artifacts(skip_model=...)` preserves active champion model file.
+- Pipeline Integration: `main.py` only calls champion update when policy conditions are satisfied.
+- Regression Tests:
+  - `tests/test_model_governance.py`
+  - `tests/test_promotion_policy.py`
+- Decision Log Updated: documented in `docs/engineering_decisions.md`.
 
 ### Verification (recommended)
-- Run governance tests:
-  - python -m unittest discover -s tests -p "test_model_governance.py" -v
-  - Expected outcome: tests pass (OK).
+
+- Governance tests:
+  - `python -m unittest discover -s tests -p "test_model_governance.py" -v`
+  - `python -m unittest discover -s tests -p "test_promotion_policy.py" -v`
 - Optional pipeline smoke:
-  - python main.py --config config/pipeline_config.yaml
+  - `python main.py --config config/pipeline_config.yaml`
 - Optional inference quick-run:
-  - python predict.py --config config/pipeline_config.yaml
+  - `python predict.py --config config/pipeline_config.yaml`
 
 ---
 
