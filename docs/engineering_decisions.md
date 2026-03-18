@@ -1327,3 +1327,42 @@ By separating decision logic from orchestration, we preserve ownership boundarie
 ### Verification
 - `python -m unittest discover -s tests -p "test_promotion_policy.py" -v` → `OK`
 - `python -m unittest discover -s tests -p "test_model_governance.py" -v` → `OK`
+
+## Day 13 — Explainable Promotion Decision Trace
+
+### Decision
+
+Introduced explainable promotion decisions by persisting reason codes and threshold context for each challenger evaluation.
+
+### Why
+
+Day 12 introduced metric-aware promotion, but decision outcomes still lacked explicit semantic trace for reviewers and future governance analysis.
+
+### Implementation
+
+- Added `evaluate_promotion()` in [src/artifacts.py](src/artifacts.py) returning structured decision payload with:
+  - `reason_code`
+  - improvement values
+  - threshold values
+  - promotion result
+- Kept `should_promote()` as backward-compatible wrapper over `evaluate_promotion()`.
+- Updated [main.py](main.py) to use `evaluate_promotion()` and persist enriched `promotion_audit`.
+- Extended benchmark persistence in [src/artifacts.py](src/artifacts.py) with:
+  - `promotion_reason_code`
+  - `promotion_direction`
+  - `absolute_improvement`
+  - `relative_improvement`
+  - threshold fields
+- Expanded regression tests in [tests/test_promotion_policy.py](tests/test_promotion_policy.py) for:
+  - reason code branches
+  - enriched promotion audit persistence
+
+### Engineering Insight
+
+Promotion governance becomes reviewable only when each decision includes both numeric deltas and semantic reason codes. This reduces ambiguity and improves reproducibility for future challenger policies.
+
+### Verification
+
+- `python -m unittest discover -s tests -p "test_promotion_policy.py" -v` → `OK`
+- `python -m unittest discover -s tests -p "test_model_governance.py" -v` → `OK`
+

@@ -9,17 +9,18 @@
 
 This project implements a modular and reproducible machine learning pipeline for daily sales forecasting using the Rossmann Store Sales dataset.
 
-The primary goal is not only predictive performance, but the construction of a production-oriented architecture that enforces:
+The goal is not only predictive performance, but also production-oriented ML architecture with explicit ownership of responsibilities, fail-fast contracts, and governed artifact lifecycle.
 
-- explicit data contracts  
-- schema validation  
-- temporal consistency  
-- modular feature engineering  
-- deterministic execution  
-- artifact versioning  
-- inference reproducibility  
+The pipeline enforces:
 
-The project is designed to demonstrate practical data engineering discipline applied to forecasting workflows, with emphasis on architecture, traceability, and controlled ML lifecycle execution.
+- explicit data contracts
+- schema validation
+- temporal consistency
+- modular feature engineering
+- deterministic execution
+- artifact versioning
+- inference reproducibility
+- explainable model promotion governance
 
 ---
 
@@ -27,16 +28,18 @@ The project is designed to demonstrate practical data engineering discipline app
 
 Main architectural principles:
 
-- YAML-driven execution  
+- YAML-driven execution
 - strict validation before transformations
-- lightweight schema version governance
-- lightweight champion model governance 
-- temporal split before feature generation  
-- modular feature registry  
-- isolated training and inference pipelines  
-- timestamped artifact persistence  
-- automatic artifact archiving  
-- config-driven runtime paths  
+- schema contract versioning
+- explicit champion model governance
+- benchmark-aware promotion policy
+- explainable promotion decision trace
+- temporal split before feature generation
+- modular feature registry
+- isolated training and inference pipelines
+- timestamped artifact persistence
+- automatic artifact archiving
+- config-driven runtime paths
 
 This architecture follows production-oriented ML pipeline patterns and separates data responsibilities across explicit pipeline layers.
 
@@ -46,54 +49,55 @@ This architecture follows production-oriented ML pipeline patterns and separates
 
 ### Data Layer
 
-- Controlled ingestion with explicit dtype handling  
-- Schema and granularity validation (`Store + Date`)  
-- Temporal split with leakage prevention  
+- Controlled ingestion with explicit dtype handling
+- Schema and granularity validation (`Store + Date`)
+- Temporal split with leakage prevention
 
 ### Feature Layer
 
-- Calendar features  
-- Lag features  
-- Rolling statistics  
-- Promo signal activation through feature registry  
+- Calendar features
+- Lag features
+- Rolling statistics
+- Promo signal activation through feature registry
 
 ### Modeling Layer
 
 Supported models:
 
-- `RandomForestRegressor`  
-- `HistGradientBoostingRegressor`  
+- `RandomForestRegressor`
+- `HistGradientBoostingRegressor`
 
 Current best baseline:
 
-- `HistGradientBoostingRegressor`  
-- MAE ≈ 508  
-- RMSE ≈ 779  
+- `HistGradientBoostingRegressor`
+- MAE ≈ 508
+- RMSE ≈ 779
 
 ### Evaluation Layer
 
 Generated artifacts:
 
-- metrics  
-- validation predictions  
-- top prediction errors  
-- store-level error aggregation  
-- feature importance  
-- benchmark history  
+- metrics
+- validation predictions
+- top prediction errors
+- store-level error aggregation
+- feature importance
+- benchmark history
+- experiment summary with promotion audit
 
 ### Inference Layer
 
-Dedicated prediction pipeline through predict.py:
+Dedicated prediction pipeline through `predict.py`:
 
-- registry-governed champion loading (explicit champion file or latest policy)  
-- inference schema validation  
-- historical context reconstruction  
-- config-driven inference input  
-- prediction artifact persistence  
+- registry-governed champion loading (explicit champion file or latest policy)
+- inference schema validation
+- historical context reconstruction
+- config-driven inference input
+- prediction artifact persistence
 - inference artifact archiving
-- schema-versioned inference contract validation  
+- schema-versioned inference contract validation
 
-The current pipeline already supports full train → evaluation → artifact → inference execution
+The current pipeline supports full train → evaluation → artifact → inference execution.
 
 ---
 
@@ -101,7 +105,7 @@ The current pipeline already supports full train → evaluation → artifact →
 
 The pipeline follows a modular architecture designed to enforce data contracts, prevent temporal leakage, and ensure reproducible CLI execution.
 
-```
+```text
                 ┌─────────────────────────┐
                 │         main.py         │
                 │  Pipeline Orchestration │
@@ -169,6 +173,7 @@ The pipeline follows a modular architecture designed to enforce data contracts, 
                 │      artifacts.py       │
                 │ persistence + archive   │
                 │ diagnostics + benchmark │
+                │ promotion governance    │
                 └────────────┬────────────┘
                              │
                              ▼
@@ -197,7 +202,7 @@ Each module has a clearly defined responsibility:
 - **feature_registry.py** — config-driven feature orchestration  
 - **training.py** — modeling preparation and baseline fitting  
 - **evaluation.py** — validation scoring and prediction generation  
-- **artifacts.py** — versioned persistence, benchmark tracking, diagnostics persistence, artifact archiving and champion promotion
+- **artifacts.py** — artifact lifecycle, promotion policy, explainable decision trace, benchmark persistence
 - **predict.py** — isolated inference execution using registry-governed champion model
 
 ---
@@ -205,6 +210,12 @@ Each module has a clearly defined responsibility:
 # Repository Structure
 ```
 pharma-demand-forecast/
+│
+├── AGENTS.md
+├── README.md
+├── main.py
+├── predict.py
+├── requirements.txt
 │
 ├── archive/
 │   ├── diagnostics/
@@ -220,7 +231,8 @@ pharma-demand-forecast/
 │   ├── top_errors_YYYYMMDD_HHMMSS.csv
 │   ├── error_by_store_YYYYMMDD_HHMMSS.csv
 │   ├── experiment_summary_YYYYMMDD_HHMMSS.json
-│   └── feature_importance_YYYYMMDD_HHMMSS.csv
+│   ├── feature_importance_YYYYMMDD_HHMMSS.csv
+│   └── inference_predictions_YYYYMMDD_HHMMSS.csv
 │
 ├── config/
 │   ├── pipeline_config.yaml
@@ -229,11 +241,17 @@ pharma-demand-forecast/
 │
 ├── data/
 │   ├── inference/
+│   │   └── future_data.csv
 │   └── raw/
+│       ├── train.csv
+│       ├── test.csv
+│       └── store.csv
 │
 ├── docs/
 │   ├── engineering_decisions.md
-│   └── data_dictionary.md
+│   ├── data_dictionary.md
+│   └── archive/
+│       └── backup_readme.md
 │
 ├── logs/
 │   └── pipeline.log
@@ -241,55 +259,64 @@ pharma-demand-forecast/
 ├── notebooks/
 │   └── exploration.ipynb
 │
+├── powerbi/
+│
 ├── src/
-│   ├── ingestion.py
-│   ├── validation.py
-│   ├── inference_validation.py
-│   ├── schema_registry.py
-│   ├── splitting.py
-│   ├── processing.py
-│   ├── feature_registry.py
-│   ├── training.py
-│   ├── evaluation.py
+│   ├── __init__.py
 │   ├── artifacts.py
+│   ├── config_loader.py
+│   ├── evaluation.py
+│   ├── feature_registry.py
 │   ├── importance.py
 │   ├── inference.py
-│   ├── config_loader.py
-│   └── logger.py
+│   ├── inference_validation.py
+│   ├── ingestion.py
+│   ├── logger.py
+│   ├── processing.py
+│   ├── schema_registry.py
+│   ├── splitting.py
+│   ├── training.py
+│   └── validation.py
 │
-├── main.py
-├── predict.py
-├── requirements.txt
-└── README.md
+└── tests/
+    ├── test_model_governance.py
+    └── test_promotion_policy.py
 ```
 
 ---
 
 ## Documentation
 Detailed technical decisions, trade-offs and architectural evolution are documented in:
-docs/engineering_decisions.md
+**docs/engineering_decisions.md**
 
 ---
 
 ## Project Status
 
-- Champion Governance: `config/model_registry.yaml` controls champion selection through explicit model reference.
-- Promotion Policy: promotion is now benchmark-aware and threshold-based.
-- Promotion Decision Logic: `src/artifacts.py` defines `should_promote()` to evaluate challenger vs champion.
-- Champion Baseline Resolution: `src/artifacts.py` loads champion metrics through `load_champion_metrics()`.
-- Artifact Rotation Safety: `archive_previous_artifacts(skip_model=...)` preserves active champion model file.
-- Pipeline Integration: `main.py` only calls champion update when policy conditions are satisfied.
+- Champion Governance: `config/model_registry.yaml`
+- Promotion Policy: promotion is benchmark-aware and threshold-based.
+- Promotion Decision is explainable through `evaluate_promotion()` in `src/artifacts.py`
+- `should_promote()`is preserved as a compatibility wrapper over explainable solution
+- Promotion audit is persisted in `experiment_summary_*.json` and `benchmark_history.csv`
+- Benchmark includes explainability fields such as:
+  -`promotion_reason_code`
+  -`promotion_direction`
+  -`absolute_improvement`
+  -`relative_improvement`
+  -`min_absolute_improvement`
+  -`min_relative_improvement`
+- Champion bseline metrics are loaded from active artifacts with archiver fallback
+- Artifact rtation preserver active champion model and champion baseline metrics
 - Regression Tests:
   - `tests/test_model_governance.py`
   - `tests/test_promotion_policy.py`
-- Decision Log Updated: documented in `docs/engineering_decisions.md`.
 
 ### Verification (recommended)
 
 - Governance tests:
   - `python -m unittest discover -s tests -p "test_model_governance.py" -v`
   - `python -m unittest discover -s tests -p "test_promotion_policy.py" -v`
-- Optional pipeline smoke:
+- Optional pipeline quick-run:
   - `python main.py --config config/pipeline_config.yaml`
 - Optional inference quick-run:
   - `python predict.py --config config/pipeline_config.yaml`
@@ -300,7 +327,7 @@ docs/engineering_decisions.md
 
 Next stages of the project include:
 
-- Promotion audit explainability (reason codes and decision trace)
+- Promotion explainability consumption in reporting
 - Batch inference orchestration
 - Simple drift monitoring
 
@@ -315,8 +342,10 @@ https://github.com/Luis-Mussalem/pharma-demand-forecast
 Clone the repository and run the pipeline:
 
 git clone https://github.com/Luis-Mussalem/pharma-demand-forecast.git
-
 cd pharma-demand-forecast
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
 
 Run training pipeline:
 python main.py --config config/pipeline_config.yaml
