@@ -109,8 +109,8 @@ class TestPromotionDecisionExplainability(unittest.TestCase):
 
     def test_reason_rejected_absolute_threshold(self):
         decision = evaluate_promotion(
-            new_metrics={"MAE": 509.5},
-            current_metrics={"MAE": 510.0},
+            new_metrics={"MAE": 39.5},
+            current_metrics={"MAE": 40.0},
             policy=self.policy,
         )
 
