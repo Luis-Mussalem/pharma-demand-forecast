@@ -280,11 +280,17 @@ class TestPromotionAuditArtifacts(unittest.TestCase):
     def test_benchmark_history_includes_promotion_audit_columns(self):
         promotion_audit = {
             "promoted": False,
+            "reason_code": "REJECTED_ABSOLUTE_AND_RELATIVE",
             "champion_before": "model_20260316_161656.pkl",
             "champion_after": "model_20260316_161656.pkl",
             "metric": "MAE",
+            "direction": "lower",
             "challenger_metric_value": 509.0,
             "champion_metric_value": 508.0,
+            "absolute_improvement": -1.0,
+            "relative_improvement": -0.0019685039,
+            "min_absolute_improvement": 1.0,
+            "min_relative_improvement": 0.01,
         }
 
         update_benchmark_history(
@@ -313,6 +319,20 @@ class TestPromotionAuditArtifacts(unittest.TestCase):
         self.assertEqual(benchmark.loc[0, "promotion_metric"], "MAE")
         self.assertEqual(benchmark.loc[0, "challenger_metric_value"], 509.0)
         self.assertEqual(benchmark.loc[0, "champion_metric_value"], 508.0)
+
+        self.assertEqual(
+            benchmark.loc[0, "promotion_reason_code"],
+            "REJECTED_ABSOLUTE_AND_RELATIVE",
+        )
+        self.assertEqual(benchmark.loc[0, "promotion_direction"], "lower")
+        self.assertEqual(benchmark.loc[0, "absolute_improvement"], -1.0)
+        self.assertAlmostEqual(
+            benchmark.loc[0, "relative_improvement"],
+            -0.0019685039,
+            places=9,
+        )
+        self.assertEqual(benchmark.loc[0, "min_absolute_improvement"], 1.0)
+        self.assertEqual(benchmark.loc[0, "min_relative_improvement"], 0.01)
 
 if __name__ == "__main__":
     unittest.main()
