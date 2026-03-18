@@ -17,6 +17,7 @@ from src.artifacts import (
     save_top_errors,
     save_error_by_store,
     save_experiment_summary,
+    save_promotion_report,
     generate_timestamp,
     update_benchmark_history,
     update_champion_model,
@@ -219,6 +220,10 @@ def main():
             artifacts_dir=artifacts_dir,
             timestamp=artifact_timestamp,
             promotion_audit=promotion_audit,
+        )
+        save_promotion_report(
+            artifacts_dir=artifacts_dir,
+            window=50,
         )
         save_feature_importance(
             importance_df,
