@@ -377,6 +377,108 @@ def load_champion_metrics(registry: dict) -> dict | None:
     )
     return None
 
+def evaluate_promotion(
+    new_metrics: dict,
+    current_metrics: dict | None,
+    policy: dict
+) -> dict:
+    """
+    Evaluate promotion decision and return a structured decision trace.
+    """
+
+    metric = policy.get("metric", "MAE")
+    direction = policy.get("direction", "lower")
+    min_relative_improvement = float(policy.get("min_relative_improvement", 0.0))
+    min_absolute_improvement = float(policy.get("min_absolute_improvement", 0.0))
+
+    if metric not in new_metrics:
+        raise KeyError(f"Metric '{metric}' missing in challenger metrics.")
+
+    challenger_value = float(new_metrics[metric])
+
+    decision = {
+        "metric": metric,
+        "direction": direction,
+        "challenger_metric_value": challenger_value,
+        "champion_metric_value": None,
+        "absolute_improvement": None,
+        "relative_improvement": None,
+        "min_absolute_improvement": min_absolute_improvement,
+        "min_relative_improvement": min_relative_improvement,
+        "promoted": False,
+        "reason_code": "UNSET",
+    }
+
+    if current_metrics is None:
+        decision["promoted"] = True
+        decision["reason_code"] = "NO_CHAMPION_BASELINE"
+        logger.info(
+            "Promotion decision | reason=%s | metric=%s | challenger=%.6f | promoted=%s",
+            decision["reason_code"],
+            metric,
+            challenger_value,
+            decision["promoted"],
+        )
+        return decision
+
+    if metric not in current_metrics:
+        raise KeyError(f"Metric '{metric}' missing in champion metrics.")
+
+    champion_value = float(current_metrics[metric])
+    decision["champion_metric_value"] = champion_value
+
+    if direction == "lower":
+        absolute_improvement = champion_value - challenger_value
+        baseline = champion_value
+    elif direction == "higher":
+        absolute_improvement = challenger_value - champion_value
+        baseline = abs(champion_value)
+    else:
+        raise ValueError("promotion_policy.direction must be 'lower' or 'higher'.")
+
+    if baseline == 0:
+        relative_improvement = float("inf") if absolute_improvement > 0 else 0.0
+    else:
+        relative_improvement = absolute_improvement / baseline
+
+    promoted = (
+        absolute_improvement >= min_absolute_improvement
+        and relative_improvement >= min_relative_improvement
+    )
+
+    if promoted:
+        reason_code = "PROMOTED_THRESHOLD_MET"
+    elif absolute_improvement < min_absolute_improvement and relative_improvement < min_relative_improvement:
+        reason_code = "REJECTED_ABSOLUTE_AND_RELATIVE"
+    elif absolute_improvement < min_absolute_improvement:
+        reason_code = "REJECTED_ABSOLUTE_THRESHOLD"
+    else:
+        reason_code = "REJECTED_RELATIVE_THRESHOLD"
+
+    decision.update(
+        {
+            "absolute_improvement": absolute_improvement,
+            "relative_improvement": relative_improvement,
+            "promoted": promoted,
+            "reason_code": reason_code,
+        }
+    )
+
+    logger.info(
+        "Promotion decision | reason=%s | metric=%s | current=%.6f | challenger=%.6f | abs_impr=%.6f | rel_impr=%.6f | abs_thr=%.6f | rel_thr=%.6f | promoted=%s",
+        reason_code,
+        metric,
+        champion_value,
+        challenger_value,
+        absolute_improvement,
+        relative_improvement,
+        min_absolute_improvement,
+        min_relative_improvement,
+        promoted,
+    )
+
+    return decision
+
 def should_promote(
     new_metrics: dict,
     current_metrics: dict | None,
