@@ -7,6 +7,7 @@ from pathlib import Path
 
 from src.artifacts import (
     archive_previous_artifacts,
+    evaluate_promotion,
     load_champion_metrics,
     save_experiment_summary,
     should_promote,
@@ -87,6 +88,54 @@ class TestPromotionPolicy(unittest.TestCase):
                 policy=invalid_policy,
             )
 
+class TestPromotionDecisionExplainability(unittest.TestCase):
+    def setUp(self):
+        self.policy = {
+            "metric": "MAE",
+            "direction": "lower",
+            "min_relative_improvement": 0.01,
+            "min_absolute_improvement": 1.0,
+        }
+
+    def test_reason_no_champion_baseline(self):
+        decision = evaluate_promotion(
+            new_metrics={"MAE": 500.0},
+            current_metrics=None,
+            policy=self.policy,
+        )
+
+        self.assertTrue(decision["promoted"])
+        self.assertEqual(decision["reason_code"], "NO_CHAMPION_BASELINE")
+
+    def test_reason_rejected_absolute_threshold(self):
+        decision = evaluate_promotion(
+            new_metrics={"MAE": 509.5},
+            current_metrics={"MAE": 510.0},
+            policy=self.policy,
+        )
+
+        self.assertFalse(decision["promoted"])
+        self.assertEqual(decision["reason_code"], "REJECTED_ABSOLUTE_THRESHOLD")
+
+    def test_reason_rejected_relative_threshold(self):
+        decision = evaluate_promotion(
+            new_metrics={"MAE": 9990.0},
+            current_metrics={"MAE": 10000.0},
+            policy=self.policy,
+        )
+
+        self.assertFalse(decision["promoted"])
+        self.assertEqual(decision["reason_code"], "REJECTED_RELATIVE_THRESHOLD")
+
+    def test_reason_promoted_threshold_met(self):
+        decision = evaluate_promotion(
+            new_metrics={"MAE": 503.0},
+            current_metrics={"MAE": 510.0},
+            policy=self.policy,
+        )
+
+        self.assertTrue(decision["promoted"])
+        self.assertEqual(decision["reason_code"], "PROMOTED_THRESHOLD_MET")
 
 class TestArchivePreviousArtifacts(unittest.TestCase):
     def setUp(self):
