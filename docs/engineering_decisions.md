@@ -1356,6 +1356,13 @@ Day 12 introduced metric-aware promotion, but decision outcomes still lacked exp
 - Expanded regression tests in [tests/test_promotion_policy.py](tests/test_promotion_policy.py) for:
   - reason code branches
   - enriched promotion audit persistence
+  - Added `save_promotion_report()` in [src/artifacts.py](src/artifacts.py) to produce `artifacts/promotion_report_latest.json`.
+- Wired report generation in [main.py](main.py) after benchmark persistence.
+- Added report regression tests in [tests/test_promotion_policy.py](tests/test_promotion_policy.py) covering:
+  - benchmark history missing
+  - benchmark history empty
+  - missing audit columns
+  - successful report generation
 
 ### Engineering Insight
 

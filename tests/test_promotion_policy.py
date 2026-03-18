@@ -430,5 +430,52 @@ class TestPromotionReport(unittest.TestCase):
         self.assertEqual(payload["total_runs"], 0)
         self.assertEqual(payload["audited_runs"], 0)
 
+    def test_generates_empty_history_report(self):
+        benchmark_path = self.repo_root / "artifacts" / "benchmark_history.csv"
+        pd.DataFrame().to_csv(benchmark_path, index=False)
+
+        save_promotion_report(
+            artifacts_dir=self.repo_root / "artifacts",
+            window=50,
+        )
+
+        report_path = self.repo_root / "artifacts" / "promotion_report_latest.json"
+        self.assertTrue(report_path.exists())
+
+        with open(report_path, "r") as f:
+            payload = json.load(f)
+
+        self.assertEqual(payload["status"], "benchmark_history_empty")
+        self.assertEqual(payload["total_runs"], 0)
+        self.assertEqual(payload["audited_runs"], 0)
+
+    def test_generates_missing_audit_columns_report(self):
+        benchmark_path = self.repo_root / "artifacts" / "benchmark_history.csv"
+        pd.DataFrame(
+            [
+                {
+                    "timestamp": "20260318_120000",
+                    "MAE": 508.0,
+                    "RMSE": 779.0,
+                }
+            ]
+        ).to_csv(benchmark_path, index=False)
+
+        save_promotion_report(
+            artifacts_dir=self.repo_root / "artifacts",
+            window=50,
+        )
+
+        report_path = self.repo_root / "artifacts" / "promotion_report_latest.json"
+        self.assertTrue(report_path.exists())
+
+        with open(report_path, "r") as f:
+            payload = json.load(f)
+
+        self.assertEqual(payload["status"], "missing_audit_columns")
+        self.assertEqual(payload["total_runs"], 1)
+        self.assertEqual(payload["audited_runs"], 0)
+        self.assertIn("promotion_reason_code", payload["missing_columns"])
+
 if __name__ == "__main__":
     unittest.main()

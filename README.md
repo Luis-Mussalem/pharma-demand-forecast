@@ -310,6 +310,7 @@ Detailed technical decisions, trade-offs and architectural evolution are documen
 - Regression Tests:
   - `tests/test_model_governance.py`
   - `tests/test_promotion_policy.py`
+- Promotion report artifact: `artifacts/promotion_report_latest.json` summarizes explainability outcomes for recent runs.
 
 ### Verification (recommended)
 
@@ -327,7 +328,7 @@ Detailed technical decisions, trade-offs and architectural evolution are documen
 
 Next stages of the project include:
 
-- Promotion explainability consumption in reporting
+- romotion explainability consumption in downstream dashboarding
 - Batch inference orchestration
 - Simple drift monitoring
 
