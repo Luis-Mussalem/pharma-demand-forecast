@@ -10,6 +10,7 @@ from src.artifacts import (
     evaluate_promotion,
     load_champion_metrics,
     save_experiment_summary,
+    save_promotion_report,
     should_promote,
     update_benchmark_history,
 )
@@ -333,6 +334,101 @@ class TestPromotionAuditArtifacts(unittest.TestCase):
         )
         self.assertEqual(benchmark.loc[0, "min_absolute_improvement"], 1.0)
         self.assertEqual(benchmark.loc[0, "min_relative_improvement"], 0.01)
+
+class TestPromotionReport(unittest.TestCase):
+    def setUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.repo_root = Path(self.temp_dir.name)
+        self.original_cwd = Path.cwd()
+
+        (self.repo_root / "artifacts").mkdir(parents=True, exist_ok=True)
+        os.chdir(self.repo_root)
+
+    def tearDown(self):
+        os.chdir(self.original_cwd)
+        self.temp_dir.cleanup()
+
+    def test_generates_report_from_benchmark_history(self):
+        benchmark_path = self.repo_root / "artifacts" / "benchmark_history.csv"
+
+        pd.DataFrame(
+            [
+                {
+                    "timestamp": "20260318_100000",
+                    "promoted_to_champion": True,
+                    "promotion_reason_code": "PROMOTED_THRESHOLD_MET",
+                    "promotion_metric": "MAE",
+                    "promotion_direction": "lower",
+                    "challenger_metric_value": 503.0,
+                    "champion_metric_value": 510.0,
+                    "absolute_improvement": 7.0,
+                    "relative_improvement": 0.01372549,
+                    "min_absolute_improvement": 1.0,
+                    "min_relative_improvement": 0.01,
+                    "champion_before": "model_20260317_090000.pkl",
+                    "champion_after": "model_20260318_100000.pkl",
+                },
+                {
+                    "timestamp": "20260318_110000",
+                    "promoted_to_champion": False,
+                    "promotion_reason_code": "REJECTED_RELATIVE_THRESHOLD",
+                    "promotion_metric": "MAE",
+                    "promotion_direction": "lower",
+                    "challenger_metric_value": 509.0,
+                    "champion_metric_value": 508.0,
+                    "absolute_improvement": -1.0,
+                    "relative_improvement": -0.0019685,
+                    "min_absolute_improvement": 1.0,
+                    "min_relative_improvement": 0.01,
+                    "champion_before": "model_20260318_100000.pkl",
+                    "champion_after": "model_20260318_100000.pkl",
+                },
+            ]
+        ).to_csv(benchmark_path, index=False)
+
+        save_promotion_report(
+            artifacts_dir=self.repo_root / "artifacts",
+            window=50,
+        )
+
+        report_path = self.repo_root / "artifacts" / "promotion_report_latest.json"
+        self.assertTrue(report_path.exists())
+
+        with open(report_path, "r") as f:
+            payload = json.load(f)
+
+        self.assertEqual(payload["status"], "ok")
+        self.assertEqual(payload["total_runs"], 2)
+        self.assertEqual(payload["audited_runs"], 2)
+        self.assertAlmostEqual(payload["promotion_rate"], 0.5, places=6)
+        self.assertEqual(
+            payload["reason_code_distribution"]["PROMOTED_THRESHOLD_MET"],
+            1,
+        )
+        self.assertEqual(
+            payload["reason_code_distribution"]["REJECTED_RELATIVE_THRESHOLD"],
+            1,
+        )
+        self.assertEqual(
+            payload["latest_decision"]["reason_code"],
+            "REJECTED_RELATIVE_THRESHOLD",
+        )
+
+    def test_generates_missing_history_report(self):
+        save_promotion_report(
+            artifacts_dir=self.repo_root / "artifacts",
+            window=50,
+        )
+
+        report_path = self.repo_root / "artifacts" / "promotion_report_latest.json"
+        self.assertTrue(report_path.exists())
+
+        with open(report_path, "r") as f:
+            payload = json.load(f)
+
+        self.assertEqual(payload["status"], "benchmark_history_missing")
+        self.assertEqual(payload["total_runs"], 0)
+        self.assertEqual(payload["audited_runs"], 0)
 
 if __name__ == "__main__":
     unittest.main()
