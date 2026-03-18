@@ -310,6 +310,167 @@ def update_benchmark_history(
 
     logger.info(f"Benchmark history updated at {benchmark_path}")
 
+def save_promotion_report(
+    artifacts_dir: Path,
+    window: int = 50,
+) -> None:
+    """
+    Build an explainability-friendly promotion report from benchmark history.
+    """
+
+    logger.info("Saving promotion explainability report.")
+
+    benchmark_path = artifacts_dir / "benchmark_history.csv"
+    output_path = artifacts_dir / "promotion_report_latest.json"
+
+    report = {
+        "generated_at": datetime.now().isoformat(timespec="seconds"),
+        "window": window,
+        "status": "ok",
+    }
+
+    if not benchmark_path.exists():
+        report.update(
+            {
+                "status": "benchmark_history_missing",
+                "total_runs": 0,
+                "audited_runs": 0,
+                "promotion_rate": None,
+                "reason_code_distribution": {},
+                "latest_decision": None,
+            }
+        )
+
+        with open(output_path, "w") as f:
+            json.dump(report, f, indent=4)
+
+        logger.info(f"Promotion report saved at {output_path}")
+        return
+
+    history = pd.read_csv(benchmark_path)
+
+    if history.empty:
+        report.update(
+            {
+                "status": "benchmark_history_empty",
+                "total_runs": 0,
+                "audited_runs": 0,
+                "promotion_rate": None,
+                "reason_code_distribution": {},
+                "latest_decision": None,
+            }
+        )
+
+        with open(output_path, "w") as f:
+            json.dump(report, f, indent=4)
+
+        logger.info(f"Promotion report saved at {output_path}")
+        return
+
+    recent = history.tail(window).copy()
+
+    required_columns = [
+        "promoted_to_champion",
+        "promotion_reason_code",
+        "promotion_metric",
+        "promotion_direction",
+        "challenger_metric_value",
+        "champion_metric_value",
+        "absolute_improvement",
+        "relative_improvement",
+        "min_absolute_improvement",
+        "min_relative_improvement",
+        "champion_before",
+        "champion_after",
+        "timestamp",
+    ]
+
+    missing_columns = [col for col in required_columns if col not in recent.columns]
+
+    if missing_columns:
+        report.update(
+            {
+                "status": "missing_audit_columns",
+                "missing_columns": missing_columns,
+                "total_runs": int(len(history)),
+                "audited_runs": 0,
+                "promotion_rate": None,
+                "reason_code_distribution": {},
+                "latest_decision": None,
+            }
+        )
+
+        with open(output_path, "w") as f:
+            json.dump(report, f, indent=4)
+
+        logger.info(f"Promotion report saved at {output_path}")
+        return
+
+    audited = recent.dropna(subset=["promotion_reason_code"]).copy()
+
+    if audited.empty:
+        report.update(
+            {
+                "total_runs": int(len(history)),
+                "audited_runs": 0,
+                "promotion_rate": None,
+                "reason_code_distribution": {},
+                "latest_decision": None,
+            }
+        )
+
+        with open(output_path, "w") as f:
+            json.dump(report, f, indent=4)
+
+        logger.info(f"Promotion report saved at {output_path}")
+        return
+
+    promoted_numeric = pd.to_numeric(audited["promoted_to_champion"], errors="coerce")
+    promotion_rate = float(promoted_numeric.mean()) if not promoted_numeric.isna().all() else None
+
+    reason_distribution = (
+        audited["promotion_reason_code"]
+        .value_counts()
+        .to_dict()
+    )
+
+    latest = audited.iloc[-1]
+
+    latest_promoted_raw = latest["promoted_to_champion"]
+    if isinstance(latest_promoted_raw, str):
+        latest_promoted = latest_promoted_raw.strip().lower() in {"true", "1", "yes"}
+    else:
+        latest_promoted = bool(latest_promoted_raw)
+
+    report.update(
+        {
+            "total_runs": int(len(history)),
+            "audited_runs": int(len(audited)),
+            "promotion_rate": promotion_rate,
+            "reason_code_distribution": reason_distribution,
+            "latest_decision": {
+                "timestamp": latest["timestamp"],
+                "promoted": latest_promoted,
+                "reason_code": latest["promotion_reason_code"],
+                "metric": latest["promotion_metric"],
+                "direction": latest["promotion_direction"],
+                "challenger_metric_value": latest["challenger_metric_value"],
+                "champion_metric_value": latest["champion_metric_value"],
+                "absolute_improvement": latest["absolute_improvement"],
+                "relative_improvement": latest["relative_improvement"],
+                "min_absolute_improvement": latest["min_absolute_improvement"],
+                "min_relative_improvement": latest["min_relative_improvement"],
+                "champion_before": latest["champion_before"],
+                "champion_after": latest["champion_after"],
+            },
+        }
+    )
+
+    with open(output_path, "w") as f:
+        json.dump(report, f, indent=4)
+
+    logger.info(f"Promotion report saved at {output_path}")
+
 def save_feature_importance(
     importance_df: pd.DataFrame,
     artifacts_dir: Path,
