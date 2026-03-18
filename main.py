@@ -20,6 +20,7 @@ from src.artifacts import (
     generate_timestamp,
     update_benchmark_history,
     update_champion_model,
+    evaluate_promotion,
     should_promote,
     load_champion_metrics,
 )
@@ -153,37 +154,41 @@ def main():
 
         save_model(model, artifacts_dir, artifact_timestamp)
 
-        promoted = should_promote(
+        promotion_decision = evaluate_promotion(
             new_metrics=metrics,
             current_metrics=current_champion_metrics,
             policy=registry.get("promotion_policy", {}),
         )
 
+        promoted = promotion_decision["promoted"]
+
         challenger_model_name = f"model_{artifact_timestamp}.pkl"
         champion_before = registry.get("champion_model")
-        promotion_metric = registry.get("promotion_policy", {}).get("metric", "MAE")
 
         if promoted:
             update_champion_model(challenger_model_name)
             champion_after = challenger_model_name
         else:
             logger.info(
-                "Challenger did not meet promotion criteria. Champion retained: %s",
+                "Challenger did not meet promotion criteria. Champion retained: %s | reason=%s",
                 champion_before,
+                promotion_decision["reason_code"],
             )
             champion_after = champion_before
 
         promotion_audit = {
             "promoted": promoted,
+            "reason_code": promotion_decision["reason_code"],
             "champion_before": champion_before,
             "champion_after": champion_after,
-            "metric": promotion_metric,
-            "challenger_metric_value": metrics.get(promotion_metric),
-            "champion_metric_value": (
-                None
-                if current_champion_metrics is None
-                else current_champion_metrics.get(promotion_metric)
-            ),
+            "metric": promotion_decision["metric"],
+            "direction": promotion_decision["direction"],
+            "challenger_metric_value": promotion_decision["challenger_metric_value"],
+            "champion_metric_value": promotion_decision["champion_metric_value"],
+            "absolute_improvement": promotion_decision["absolute_improvement"],
+            "relative_improvement": promotion_decision["relative_improvement"],
+            "min_absolute_improvement": promotion_decision["min_absolute_improvement"],
+            "min_relative_improvement": promotion_decision["min_relative_improvement"],
         }
 
         save_metrics(metrics, artifacts_dir, artifact_timestamp)

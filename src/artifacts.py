@@ -286,11 +286,17 @@ def update_benchmark_history(
         benchmark_entry.update(
             {
                 "promoted_to_champion": promotion_audit["promoted"],
+                "promotion_reason_code": promotion_audit.get("reason_code"),
                 "champion_before": promotion_audit["champion_before"],
                 "champion_after": promotion_audit["champion_after"],
                 "promotion_metric": promotion_audit["metric"],
+                "promotion_direction": promotion_audit.get("direction"),
                 "challenger_metric_value": promotion_audit["challenger_metric_value"],
                 "champion_metric_value": promotion_audit["champion_metric_value"],
+                "absolute_improvement": promotion_audit.get("absolute_improvement"),
+                "relative_improvement": promotion_audit.get("relative_improvement"),
+                "min_absolute_improvement": promotion_audit.get("min_absolute_improvement"),
+                "min_relative_improvement": promotion_audit.get("min_relative_improvement"),
             }
         )
 
