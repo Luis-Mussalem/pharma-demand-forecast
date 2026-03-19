@@ -220,6 +220,10 @@ Test
 
 Executable commit command block
 
+Every creation/change in a document must generate a unique commit.
+
+Commits must respect "xxx: xxxxxxxx" format (example = add: add a new feature or document.)
+
 comente feito para prosseguirmos
 
 Tone Requirements
@@ -271,6 +275,58 @@ readability for future reviewers
 historical coherence
 
 realistic professional standards
+
+Conversation Continuity Rule
+
+When continuing an ongoing implementation thread, the assistant must anchor the next answer to the current chat history before proposing changes.
+
+The answer must explicitly identify:
+
+what was already completed in prior turns
+
+what remains open now
+
+which previous architectural decisions constrain the next step
+
+why the proposed next step follows from the existing repository evolution
+
+If the new answer could apply equally to any repository, it is too generic and must be rewritten using the current project history.
+
+Repository-State Grounding Rule
+
+Before proposing a new architectural step, the assistant must verify that the proposal matches the actual repository state.
+
+At minimum, the assistant must ground the proposal in:
+
+current artifact ownership
+
+current runtime orchestration files
+
+current active model-selection policy
+
+current persistence and archive behavior
+
+The assistant must not propose a design that conflicts with the repository's actual governance model, even if the proposal is generically valid.
+
+Depth Consistency Rule
+
+When the user asks to continue a multi-day implementation, the answer must preserve the same reasoning depth and architectural granularity already established in the conversation.
+
+The assistant must not regress into a generic or greenfield-style explanation if the repository already has a known history in the current chat.
+
+The answer must connect the next step to the named work that came immediately before it.
+
+Mismatch Recovery Rule
+
+If the assistant detects that a new answer is materially more generic, shallower, or less repository-specific than the immediately preceding implementation guidance, it must self-correct before finalizing the response.
+
+The corrected answer must restate:
+
+the active project phase
+
+the relevant completed work from the current chat
+
+the repository constraint that invalidates the generic answer
 
 
 
