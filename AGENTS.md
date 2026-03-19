@@ -372,12 +372,12 @@ clean evolution by small commits
 
 architecture without premature abstraction
 
-Current Technical State (End of Day 11)
+Current Technical State (End of Day 14)
 Data Ingestion
 
 File:
 
-src/ingestion.py
+[ingestion.py](http://_vscodecontentref_/49)
 
 Responsibilities:
 
@@ -393,7 +393,7 @@ Training Validation Layer
 
 File:
 
-src/validation.py
+[validation.py](http://_vscodecontentref_/50)
 
 Responsibilities:
 
@@ -409,7 +409,7 @@ Inference Validation Layer
 
 File:
 
-src/inference_validation.py
+[inference_validation.py](http://_vscodecontentref_/51)
 
 Responsibilities:
 
@@ -427,9 +427,9 @@ Schema Governance
 
 Files:
 
-src/schema_registry.py
+[schema_registry.py](http://_vscodecontentref_/52)
 
-config/schema_version.yaml
+[schema_version.yaml](http://_vscodecontentref_/53)
 
 Current behavior:
 
@@ -443,9 +443,9 @@ Feature Engineering
 
 Files:
 
-src/processing.py
+[processing.py](http://_vscodecontentref_/54)
 
-src/feature_registry.py
+[feature_registry.py](http://_vscodecontentref_/55)
 
 Implemented features:
 
@@ -461,7 +461,7 @@ Training Layer
 
 File:
 
-src/training.py
+[training.py](http://_vscodecontentref_/56)
 
 Champion baseline:
 
@@ -477,7 +477,7 @@ Evaluation Layer
 
 File:
 
-src/evaluation.py
+[evaluation.py](http://_vscodecontentref_/57)
 
 Outputs:
 
@@ -493,7 +493,7 @@ Artifact Governance
 
 File:
 
-src/artifacts.py
+[artifacts.py](http://_vscodecontentref_/58)
 
 Current artifact lifecycle:
 
@@ -507,13 +507,33 @@ diagnostics persistence
 
 champion promotion
 
+promotion explainability report
+
+distribution baseline persistence
+
+inference drift report persistence
+
+Drift Monitoring Layer
+
+File:
+
+[drift.py](http://_vscodecontentref_/59)
+
+Responsibilities:
+
+model-input baseline statistics
+
+z-score mean-shift drift evaluation
+
+non-blocking drift status generation
+
 Inference Layer
 
 Files:
 
-src/inference.py
+[inference.py](http://_vscodecontentref_/60)
 
-predict.py
+[predict.py](http://_vscodecontentref_/61)
 
 Current inference supports:
 
@@ -521,11 +541,15 @@ latest model policy
 
 explicit champion file policy
 
+champion-aligned baseline lookup
+
+drift report generation
+
 Model Governance
 
 Files:
 
-config/model_registry.yaml
+[model_registry.yaml](http://_vscodecontentref_/62)
 
 Current champion policy:
 
@@ -537,9 +561,9 @@ Champion Promotion Lifecycle
 
 Current behavior:
 
-Training automatically updates champion model after successful save.
+Training evaluates and promotes based on policy.
 
-Training promotes. Inference consumes.
+Inference consumes active governed model.
 
 Architecture Already Built by Days
 Day 1–3
@@ -608,20 +632,34 @@ explicit champion selection
 
 automatic champion promotion
 
-Immediate Future Likely Direction
 Day 12
+
+Benchmark-aware promotion policy
+
+Day 13
+
+Explainable promotion decision trace
+
+promotion report artifact
+
+Day 14
+
+Champion-aligned drift baseline and inference drift report
+
+Immediate Future Likely Direction
+Day 15
 
 Most natural next step:
 
-lightweight benchmark-aware champion governance
+dashboard-oriented consumption of promotion and drift governance artifacts
 
 Possible directions:
 
-challenger comparison
+store-level drift segmentation
 
-promotion rule based on metrics
+alert thresholds by feature family
 
-explicit champion decision policy
+promotion and drift unified observability panel
 
 Project-Specific Golden Rule
 
@@ -949,6 +987,49 @@ Latest artifact is not always equivalent to promoted model.
 Anti-Regression Rule
 
 Champion policy must remain external to inference code.
+
+Historical Error 12 — Empty Promotion Benchmark CSV Crash
+Error Observed
+
+pandas.errors.EmptyDataError while generating promotion report
+
+Root Cause
+
+benchmark_history.csv existed but was empty (no header, no rows), and read_csv raised before empty dataframe checks.
+
+Correct Fix Applied
+
+Added EmptyDataError fallback in [artifacts.py](http://_vscodecontentref_/65) save_promotion_report:
+empty file now maps to an empty DataFrame and follows benchmark_history_empty report path.
+
+Architectural Lesson
+
+Artifact readers must treat empty files as a governed state, not an unhandled runtime exception.
+
+Anti-Regression Rule
+
+Keep explicit EmptyDataError handling in promotion report generation.
+
+Historical Error 13 — Inference Contract Mismatch After Drift Integration
+Error Observed
+
+ValueError too many values to unpack in [predict.py](http://_vscodecontentref_/66)
+
+Root Cause
+
+[predict.py](http://_vscodecontentref_/67) expected run_inference to return predictions and inference matrix, while [inference.py](http://_vscodecontentref_/68) still returned only predictions.
+
+Correct Fix Applied
+
+Updated [inference.py](http://_vscodecontentref_/69) run_inference to return both result and scored matrix.
+
+Architectural Lesson
+
+Cross-layer return contracts must evolve atomically when observability depends on model input matrices.
+
+Anti-Regression Rule
+
+Keep inference return contract synchronized with [predict.py](http://_vscodecontentref_/70) drift orchestration expectations.
 
 Global Anti-Regression Rule for Future Changes
 

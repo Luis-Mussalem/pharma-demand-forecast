@@ -1373,3 +1373,60 @@ Promotion governance becomes reviewable only when each decision includes both nu
 - `python -m unittest discover -s tests -p "test_promotion_policy.py" -v` → `OK`
 - `python -m unittest discover -s tests -p "test_model_governance.py" -v` → `OK`
 
+## Day 14 — Champion-Aligned Drift Monitoring
+
+### Decision
+
+Introduced a lightweight drift monitoring layer aligned to the active model consumed in inference.
+
+### Why
+
+Day 13 completed explainable promotion governance, but inference still lacked statistical observability over input distribution shifts.
+Structural validation alone does not detect silent distribution drift.
+
+### Implementation
+
+- Added drift computation module in src/drift.py:
+  - compute_distribution_baseline
+  - detect_drift
+- Added drift artifact persistence in src/artifacts.py:
+  - save_distribution_baseline
+  - save_drift_report
+  - load_distribution_baseline_for_model
+- Extended archive behavior in [artifacts.py](http://_vscodecontentref_/37) to preserve champion-aligned distribution baseline during artifact rotation.
+- Updated [main.py](http://_vscodecontentref_/38) to compute model-input baseline from training-ready features and persist distribution_baseline_YYYYMMDD_HHMMSS.json for each run.
+- Updated [predict.py](http://_vscodecontentref_/39) to:
+  - resolve active model path
+  - run inference returning predictions and scored matrix
+  - load baseline aligned to active model
+  - generate and persist [drift_report_latest.json](http://_vscodecontentref_/40) without blocking inference
+- Added runtime drift configuration in config/pipeline_config.yaml:
+  - drift.z_score_threshold
+- Added dedicated regression suite in tests/test_drift_monitoring.py.
+- Hardened promotion report generation in [artifacts.py](http://_vscodecontentref_/41) by handling empty benchmark csv files through EmptyDataError fallback.
+- Aligned inference runtime contract in [inference.py](http://_vscodecontentref_/42) to return both result and model input matrix used for scoring.
+
+### Engineering Insight
+
+This step completes a governance triad:
+- schema contract validation
+- explainable promotion governance
+- champion-aligned inference drift observability
+
+Drift remained intentionally non-blocking to preserve runtime continuity while still exposing risk signals as governed artifacts.
+
+### Verification
+
+- python -m unittest discover -s tests -p "test_drift_monitoring.py" -v → OK
+- python -m unittest discover -s tests -p "test_model_governance.py" -v → OK
+- python -m unittest discover -s tests -p "test_promotion_policy.py" -v → OK
+- python [main.py](http://_vscodecontentref_/43) --config [pipeline_config.yaml](http://_vscodecontentref_/44) → completed successfully
+- python [predict.py](http://_vscodecontentref_/45) --config [pipeline_config.yaml](http://_vscodecontentref_/46) → completed successfully
+
+### Closure Note
+
+Day 14 closed with champion-aligned drift baseline persistence and non-blocking inference drift report generation.
+Suggested tag: day14-drift-monitoring-complete
+
+
+
