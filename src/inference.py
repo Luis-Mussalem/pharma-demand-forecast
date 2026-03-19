@@ -156,4 +156,4 @@ def run_inference(model, df: pd.DataFrame) -> pd.DataFrame:
 
     logger.info("Inference completed successfully.")
 
-    return result
+    return result, X

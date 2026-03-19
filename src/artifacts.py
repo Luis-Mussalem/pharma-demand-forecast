@@ -370,7 +370,10 @@ def save_promotion_report(
         logger.info(f"Promotion report saved at {output_path}")
         return
 
-    history = pd.read_csv(benchmark_path)
+    try:
+        history = pd.read_csv(benchmark_path)
+    except pd.errors.EmptyDataError:
+        history = pd.DataFrame()
 
     if history.empty:
         report.update(
