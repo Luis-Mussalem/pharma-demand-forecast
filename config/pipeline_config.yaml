@@ -21,3 +21,6 @@ model:
 inference:
   data_path: data/inference/future_data.csv
   history_window_days: 14
+
+drift:
+  z_score_threshold: 3.0
