@@ -6,13 +6,19 @@ from src.ingestion import load_data
 from src.logger import get_logger
 from src.config_loader import load_config
 from src.splitting import temporal_train_validation_split
-from src.training import train_model
+from src.training import (
+    train_model,
+    prepare_modeling_data,
+    prepare_features,
+    encode_categorical_features,
+)
 from src.evaluation import evaluate_model
 from src.artifacts import (
     archive_previous_artifacts,
     save_feature_importance,
-    save_model, 
+    save_model,
     save_metrics,
+    save_distribution_baseline,
     save_predictions,
     save_top_errors,
     save_error_by_store,
@@ -31,6 +37,7 @@ from src.feature_registry import (
     FEATURE_REGISTRY,
 )
 from src.importance import compute_feature_importance
+from src.drift import compute_distribution_baseline
 
 def parse_arguments() -> argparse.Namespace:
     """
@@ -129,6 +136,11 @@ def main():
 
         logger.info("Feature engineering completed successfully.")
 
+        train_ready = prepare_modeling_data(train_df)
+        X_train, _ = prepare_features(train_ready)
+        X_train = encode_categorical_features(X_train)
+        distribution_baseline = compute_distribution_baseline(X_train)
+
         model = train_model(
             train_df,
             config["model"]["name"]
@@ -154,6 +166,12 @@ def main():
         )
 
         save_model(model, artifacts_dir, artifact_timestamp)
+
+        save_distribution_baseline(
+        baseline=distribution_baseline,
+        artifacts_dir=artifacts_dir,
+        timestamp=artifact_timestamp,
+        )
 
         promotion_decision = evaluate_promotion(
             new_metrics=metrics,
