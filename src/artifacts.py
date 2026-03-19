@@ -22,7 +22,8 @@ def generate_timestamp() -> str:
 def archive_previous_artifacts(skip_model: str | None = None):
     """
     Move previous artifacts to archive folders before saving new outputs.
-    Preserves champion model and its metrics file when skip_model is provided.
+    Preserves champion model, champion metrics, and champion distribution baseline
+    when skip_model is provided.
     """
 
     logger.info("Archiving previous artifacts.")
@@ -39,10 +40,12 @@ def archive_previous_artifacts(skip_model: str | None = None):
         if model_stem.startswith("model_"):
             champion_timestamp = model_stem[len("model_"):]
             skip_files.add(f"metrics_{champion_timestamp}.json")
+            skip_files.add(f"distribution_baseline_{champion_timestamp}.json")
 
     folder_mapping = {
         "model_": "models",
         "metrics_": "metrics",
+        "distribution_baseline_": "metrics",
         "experiment_summary_": "metrics",
         "feature_importance_": "metrics",
         "predictions_": "predictions",
@@ -129,6 +132,26 @@ def save_metrics(metrics: dict, output_dir: Path, timestamp: str) -> None:
         json.dump(metrics, f, indent=4)
 
     logger.info(f"Metrics saved at {metrics_path}")
+
+def save_distribution_baseline(
+    baseline: dict,
+    artifacts_dir: Path,
+    timestamp: str,
+) -> None:
+    """
+    Save model-input distribution baseline aligned to a training artifact timestamp.
+    """
+
+    logger.info("Saving distribution baseline artifact.")
+
+    artifacts_dir.mkdir(parents=True, exist_ok=True)
+
+    output_path = artifacts_dir / f"distribution_baseline_{timestamp}.json"
+
+    with open(output_path, "w") as file:
+        json.dump(baseline, file, indent=4)
+
+    logger.info(f"Distribution baseline saved at {output_path}")
 
 def save_predictions(validation_df, predictions, output_dir: Path, timestamp: str) -> None:
     """
@@ -508,6 +531,25 @@ def save_inference_predictions(
 
     logger.info(f"Inference predictions saved at {output_path}")
 
+def save_drift_report(
+    report: dict,
+    artifacts_dir: Path,
+) -> None:
+    """
+    Save latest inference drift monitoring report.
+    """
+
+    logger.info("Saving drift report artifact.")
+
+    artifacts_dir.mkdir(parents=True, exist_ok=True)
+
+    output_path = artifacts_dir / "drift_report_latest.json"
+
+    with open(output_path, "w") as file:
+        json.dump(report, file, indent=4)
+
+    logger.info(f"Drift report saved at {output_path}")
+
 def load_champion_metrics(registry: dict) -> dict | None:
     """
     Load metrics artifact associated with the current champion model.
@@ -541,6 +583,37 @@ def load_champion_metrics(registry: dict) -> dict | None:
 
     logger.info(
         f"Champion metrics file not found in active or archive folders: {metrics_filename}"
+    )
+    return None
+
+def load_distribution_baseline_for_model(model_filename: str) -> dict | None:
+    """
+    Load distribution baseline artifact aligned to a specific model filename.
+    Looks in active artifacts first, then archive fallback.
+    """
+
+    model_stem = Path(model_filename).stem
+
+    if not model_stem.startswith("model_"):
+        logger.info(f"Model filename does not follow expected pattern: {model_filename}")
+        return None
+
+    timestamp = model_stem[len("model_"):]
+    baseline_filename = f"distribution_baseline_{timestamp}.json"
+
+    candidate_paths = [
+        Path("artifacts") / baseline_filename,
+        Path("archive") / "metrics" / baseline_filename,
+    ]
+
+    for baseline_path in candidate_paths:
+        if baseline_path.exists():
+            with open(baseline_path, "r") as file:
+                return json.load(file)
+
+    logger.info(
+        "Distribution baseline file not found in active or archive folders: %s",
+        baseline_filename,
     )
     return None
 
