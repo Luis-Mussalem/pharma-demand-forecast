@@ -239,6 +239,7 @@ pharma-demand-forecast/
 │   ├── promotion_report_latest.json
 │   ├── distribution_baseline_YYYYMMDD_HHMMSS.json
 │   ├── drift_report_latest.json
+│   ├── governance_summary_latest.json
 │   └── inference_predictions_YYYYMMDD_HHMMSS.csv
 │
 ├── config/
@@ -315,6 +316,9 @@ Detailed technical decisions, trade-offs and architectural evolution are documen
 - Inference drift report persisted as latest runtime signal: [drift_report_latest.json](http://_vscodecontentref_/28)
 - Drift baseline lookup is aligned to the active model consumed in inference
 - Regression tests: tests/test_model_governance.py, tests/test_promotion_policy.py, [test_drift_monitoring.py](http://_vscodecontentref_/29)
+- Unified governance observability snapshot persisted as latest operational state: artifacts/governance_summary_latest.json
+- Governance summary consolidates champion registry, promotion latest decision, drift latest status, and benchmark latest row
+- Consistency checks persisted for registry alignment across promotion and drift reports
 
 ### Verification (recommended)
 
@@ -330,9 +334,9 @@ Detailed technical decisions, trade-offs and architectural evolution are documen
 
 Next stages of the project include:
 
-- promotion explainability and drift observability consumption in downstream dashboarding
-- batch inference orchestration
+- dashboard consumption of unified governance observability snapshot
 - store-level drift segmentation and monitoring
+- alert thresholds by feature family
 
 ---
 
