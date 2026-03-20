@@ -24,6 +24,7 @@ from src.artifacts import (
     save_error_by_store,
     save_experiment_summary,
     save_promotion_report,
+    save_governance_summary,
     generate_timestamp,
     update_benchmark_history,
     update_champion_model,
@@ -247,6 +248,10 @@ def main():
             importance_df,
             artifacts_dir,
             artifact_timestamp
+        )
+
+        save_governance_summary(
+            artifacts_dir=artifacts_dir,
         )
 
         if args.save_processed:
