@@ -1428,5 +1428,59 @@ Drift remained intentionally non-blocking to preserve runtime continuity while s
 Day 14 closed with champion-aligned drift baseline persistence and non-blocking inference drift report generation.
 Suggested tag: day14-drift-monitoring-complete
 
+## Day 15 — Unified Governance Observability Snapshot
 
+### Decision
+
+Introduced a unified governance observability snapshot to consolidate promotion and drift runtime signals into a single governed artifact.
+
+### Why
+
+By Day 14, governance artifacts existed but operational consumption remained fragmented across multiple files.
+Reviewers needed to manually reconcile champion registry, promotion decision trace, drift status, and benchmark context.
+
+This slowed observability and reduced clarity for downstream dashboard consumption.
+
+### Implementation
+
+- Added `save_governance_summary()` in `src/artifacts.py` to persist:
+  - champion model and champion metrics (when available)
+  - promotion report status and latest decision
+  - drift report status and drift summary
+  - latest benchmark row snapshot
+  - consistency checks between registry, promotion, and drift model alignment
+- Wired snapshot generation in `main.py` after training artifact persistence.
+- Wired snapshot generation in `predict.py` after drift report persistence.
+- Added regression coverage in `tests/test_promotion_policy.py`:
+  - unified summary happy-path generation
+  - resilient behavior when promotion/drift reports are missing
+- Fixed inference integration contract mismatch:
+  - removed unsupported `timestamp` argument from `save_governance_summary()` call in `predict.py`
+
+### Engineering Insight
+
+This step converts governance from isolated artifacts into a single operationally consumable state.
+
+It improves:
+- architectural readability for reviewers
+- portability to dashboard and cloud-oriented monitoring flows
+- contract stability for future observability evolution (e.g., store-level segmentation)
+
+### Verification
+
+- `python -m unittest discover -s tests -p "test_promotion_policy.py" -v` → `OK`
+- `python -m unittest discover -s tests -p "test_drift_monitoring.py" -v` → `OK`
+- `python -m unittest discover -s tests -p "test_model_governance.py" -v` → `OK`
+- `python main.py --config config/pipeline_config.yaml` → completed successfully
+- `python predict.py --config config/pipeline_config.yaml` → completed successfully
+
+### Remaining TODOs / Next Step
+
+- Consume `governance_summary_latest.json` in a dashboard-oriented observability layer.
+- Evaluate first segmentation cut (store-level or feature-family-level drift visibility).
+
+### Closure Note
+
+Day 15 closed with unified governance observability snapshot persistence and cross-layer contract alignment after inference integration fix.
+Suggested tag: day15-governance-observability-snapshot
 
