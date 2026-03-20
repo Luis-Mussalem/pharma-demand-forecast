@@ -12,6 +12,7 @@ from src.artifacts import (
     archive_inference_artifacts,
     load_distribution_baseline_for_model,
     save_drift_report,
+    save_governance_summary,
     save_inference_predictions,
 )
 
@@ -84,6 +85,11 @@ def main():
     save_drift_report(
         drift_report,
         Path("artifacts"),
+    )
+
+    save_governance_summary(
+        artifacts_dir=Path("artifacts"),
+        timestamp=timestamp,
     )
 
     logger.info("Inference pipeline completed successfully.")
