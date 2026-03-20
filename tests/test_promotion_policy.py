@@ -10,6 +10,7 @@ from src.artifacts import (
     evaluate_promotion,
     load_champion_metrics,
     save_experiment_summary,
+    save_governance_summary,
     save_promotion_report,
     should_promote,
     update_benchmark_history,
@@ -476,6 +477,107 @@ class TestPromotionReport(unittest.TestCase):
         self.assertEqual(payload["total_runs"], 1)
         self.assertEqual(payload["audited_runs"], 0)
         self.assertIn("promotion_reason_code", payload["missing_columns"])
+
+class TestGovernanceSummary(unittest.TestCase):
+    def setUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.repo_root = Path(self.temp_dir.name)
+        self.original_cwd = Path.cwd()
+
+        (self.repo_root / "artifacts").mkdir(parents=True, exist_ok=True)
+        (self.repo_root / "config").mkdir(parents=True, exist_ok=True)
+
+        os.chdir(self.repo_root)
+
+    def tearDown(self):
+        os.chdir(self.original_cwd)
+        self.temp_dir.cleanup()
+
+    def test_generates_unified_governance_summary(self):
+        (self.repo_root / "config" / "model_registry.yaml").write_text(
+            "champion_model: model_20260316_161656.pkl\n"
+        )
+
+        (self.repo_root / "artifacts" / "metrics_20260316_161656.json").write_text(
+            json.dumps({"MAE": 508.36, "RMSE": 779.23})
+        )
+
+        (self.repo_root / "artifacts" / "promotion_report_latest.json").write_text(
+            json.dumps(
+                {
+                    "status": "ok",
+                    "latest_decision": {
+                        "timestamp": "20260319_183955",
+                        "champion_after": "model_20260316_161656.pkl",
+                        "reason_code": "REJECTED_ABSOLUTE_AND_RELATIVE",
+                    },
+                }
+            )
+        )
+
+        (self.repo_root / "artifacts" / "drift_report_latest.json").write_text(
+            json.dumps(
+                {
+                    "status": "baseline_missing",
+                    "drift_detected": None,
+                    "model_filename": "model_20260316_161656.pkl",
+                    "drifted_features": [],
+                }
+            )
+        )
+
+        pd.DataFrame(
+            [
+                {
+                    "timestamp": "20260319_183955",
+                    "model": "hist_gradient_boosting",
+                    "features_used": "calendar|lag|rolling|promo",
+                    "MAE": 508.3677641169985,
+                    "RMSE": 779.234027877473,
+                }
+            ]
+        ).to_csv(self.repo_root / "artifacts" / "benchmark_history.csv", index=False)
+
+        save_governance_summary(self.repo_root / "artifacts")
+
+        output_path = self.repo_root / "artifacts" / "governance_summary_latest.json"
+        self.assertTrue(output_path.exists())
+
+        payload = json.loads(output_path.read_text())
+
+        self.assertEqual(
+            payload["champion"]["model_filename"],
+            "model_20260316_161656.pkl",
+        )
+        self.assertEqual(payload["champion"]["metrics"]["MAE"], 508.36)
+        self.assertEqual(payload["promotion"]["report_status"], "ok")
+        self.assertEqual(payload["promotion"]["latest_decision"]["reason_code"], "REJECTED_ABSOLUTE_AND_RELATIVE")
+        self.assertEqual(payload["drift"]["report_status"], "baseline_missing")
+        self.assertEqual(payload["latest_benchmark"]["model"], "hist_gradient_boosting")
+        self.assertTrue(payload["consistency_checks"]["promotion_aligned_to_registry"])
+        self.assertTrue(payload["consistency_checks"]["drift_aligned_to_registry"])
+
+    def test_handles_missing_reports_without_crashing(self):
+        (self.repo_root / "config" / "model_registry.yaml").write_text(
+            "champion_model: model_20260316_161656.pkl\n"
+        )
+
+        save_governance_summary(self.repo_root / "artifacts")
+
+        output_path = self.repo_root / "artifacts" / "governance_summary_latest.json"
+        self.assertTrue(output_path.exists())
+
+        payload = json.loads(output_path.read_text())
+
+        self.assertEqual(
+            payload["champion"]["model_filename"],
+            "model_20260316_161656.pkl",
+        )
+        self.assertEqual(payload["promotion"]["report_status"], "promotion_report_missing")
+        self.assertEqual(payload["drift"]["report_status"], "drift_report_missing")
+        self.assertIsNone(payload["latest_benchmark"])
+        self.assertIsNone(payload["consistency_checks"]["promotion_aligned_to_registry"])
+        self.assertIsNone(payload["consistency_checks"]["drift_aligned_to_registry"])
 
 if __name__ == "__main__":
     unittest.main()
