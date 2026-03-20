@@ -553,6 +553,111 @@ def save_drift_report(
 
     logger.info(f"Drift report saved at {output_path}")
 
+def save_governance_summary(
+    artifacts_dir: Path,
+) -> None:
+    """
+    Save unified governance observability summary for operational consumption.
+    """
+
+    logger.info("Saving governance observability summary.")
+
+    artifacts_dir.mkdir(parents=True, exist_ok=True)
+
+    registry_path = Path("config/model_registry.yaml")
+    promotion_report_path = artifacts_dir / "promotion_report_latest.json"
+    drift_report_path = artifacts_dir / "drift_report_latest.json"
+    benchmark_path = artifacts_dir / "benchmark_history.csv"
+    output_path = artifacts_dir / "governance_summary_latest.json"
+
+    registry = {}
+
+    if registry_path.exists():
+        with open(registry_path, "r") as file:
+            loaded = yaml.safe_load(file)
+            if isinstance(loaded, dict):
+                registry = loaded
+
+    champion_model = registry.get("champion_model")
+    champion_metrics = load_champion_metrics(registry)
+
+    promotion_report = None
+    if promotion_report_path.exists():
+        with open(promotion_report_path, "r") as file:
+            promotion_report = json.load(file)
+
+    drift_report = None
+    if drift_report_path.exists():
+        with open(drift_report_path, "r") as file:
+            drift_report = json.load(file)
+
+    latest_benchmark = None
+
+    if benchmark_path.exists():
+        try:
+            history = pd.read_csv(benchmark_path)
+        except pd.errors.EmptyDataError:
+            history = pd.DataFrame()
+
+        if not history.empty:
+            latest = history.iloc[-1]
+
+            latest_benchmark = {
+                "timestamp": latest.get("timestamp"),
+                "model": latest.get("model"),
+                "features_used": latest.get("features_used"),
+                "MAE": float(latest["MAE"]) if pd.notna(latest.get("MAE")) else None,
+                "RMSE": float(latest["RMSE"]) if pd.notna(latest.get("RMSE")) else None,
+            }
+
+    latest_decision = None if promotion_report is None else promotion_report.get("latest_decision")
+    drift_model_filename = None if drift_report is None else drift_report.get("model_filename")
+
+    summary = {
+        "generated_at": datetime.now().isoformat(timespec="seconds"),
+        "champion": {
+            "model_filename": champion_model,
+            "metrics": None
+            if champion_metrics is None
+            else {
+                "MAE": champion_metrics.get("MAE"),
+                "RMSE": champion_metrics.get("RMSE"),
+            },
+        },
+        "promotion": {
+            "report_status": "promotion_report_missing"
+            if promotion_report is None
+            else promotion_report.get("status"),
+            "latest_decision": latest_decision,
+        },
+        "drift": {
+            "report_status": "drift_report_missing"
+            if drift_report is None
+            else drift_report.get("status"),
+            "drift_detected": None
+            if drift_report is None
+            else drift_report.get("drift_detected"),
+            "model_filename": drift_model_filename,
+            "drifted_features": []
+            if drift_report is None
+            else drift_report.get("drifted_features", []),
+        },
+        "latest_benchmark": latest_benchmark,
+        "consistency_checks": {
+            "promotion_aligned_to_registry": None
+            if champion_model is None or latest_decision is None
+            else latest_decision.get("champion_after") == champion_model,
+            "drift_aligned_to_registry": None
+            if champion_model is None or drift_model_filename is None
+            else drift_model_filename == champion_model,
+        },
+    }
+
+    with open(output_path, "w") as file:
+        json.dump(summary, file, indent=4)
+
+    logger.info(f"Governance observability summary saved at {output_path}")
+
 def load_champion_metrics(registry: dict) -> dict | None:
     """
     Load metrics artifact associated with the current champion model.
