@@ -89,7 +89,6 @@ def main():
 
     save_governance_summary(
         artifacts_dir=Path("artifacts"),
-        timestamp=timestamp,
     )
 
     logger.info("Inference pipeline completed successfully.")
