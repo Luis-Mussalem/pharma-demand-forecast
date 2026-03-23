@@ -25,6 +25,7 @@ from src.artifacts import (
     save_experiment_summary,
     save_promotion_report,
     save_governance_summary,
+    save_governance_alerts,
     generate_timestamp,
     update_benchmark_history,
     update_champion_model,
@@ -251,6 +252,10 @@ def main():
         )
 
         save_governance_summary(
+            artifacts_dir=artifacts_dir,
+        )
+
+        save_governance_alerts(
             artifacts_dir=artifacts_dir,
         )
 
