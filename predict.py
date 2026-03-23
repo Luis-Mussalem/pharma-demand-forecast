@@ -13,6 +13,7 @@ from src.artifacts import (
     load_distribution_baseline_for_model,
     save_drift_report,
     save_governance_summary,
+    save_governance_alerts,
     save_inference_predictions,
 )
 
@@ -88,6 +89,10 @@ def main():
     )
 
     save_governance_summary(
+        artifacts_dir=Path("artifacts"),
+    )
+
+    save_governance_alerts(
         artifacts_dir=Path("artifacts"),
     )
 
