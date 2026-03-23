@@ -658,6 +658,179 @@ def save_governance_summary(
 
     logger.info(f"Governance observability summary saved at {output_path}")
 
+def save_governance_alerts(
+    artifacts_dir: Path,
+    consecutive_rejection_threshold: int = 3,
+    critical_drift_feature_threshold: int = 5,
+) -> None:
+    """
+    Save governance alerts derived from unified observability summary.
+    """
+
+    logger.info("Saving governance alerts artifact.")
+
+    artifacts_dir.mkdir(parents=True, exist_ok=True)
+
+    summary_path = artifacts_dir / "governance_summary_latest.json"
+    benchmark_path = artifacts_dir / "benchmark_history.csv"
+    output_path = artifacts_dir / "governance_alerts_latest.json"
+
+    alerts = []
+
+    if not summary_path.exists():
+        payload = {
+            "generated_at": datetime.now().isoformat(timespec="seconds"),
+            "status": "summary_missing",
+            "alerts": [
+                {
+                    "code": "GOVERNANCE_SUMMARY_MISSING",
+                    "severity": "critical",
+                    "message": "Governance summary artifact not found.",
+                    "details": {
+                        "summary_path": str(summary_path),
+                    },
+                }
+            ],
+            "total_alerts": 1,
+            "critical_alerts": 1,
+            "warn_alerts": 0,
+            "info_alerts": 0,
+        }
+
+        with open(output_path, "w") as file:
+            json.dump(payload, file, indent=4)
+
+        logger.info(f"Governance alerts saved at {output_path}")
+        return
+
+    with open(summary_path, "r") as file:
+        summary = json.load(file)
+
+    promotion = summary.get("promotion", {})
+    drift = summary.get("drift", {})
+    consistency_checks = summary.get("consistency_checks", {})
+
+    promotion_status = promotion.get("report_status")
+    drift_status = drift.get("report_status")
+    drift_detected = drift.get("drift_detected")
+    drifted_features = drift.get("drifted_features", [])
+
+    if promotion_status == "promotion_report_missing":
+        alerts.append(
+            {
+                "code": "PROMOTION_REPORT_MISSING",
+                "severity": "warn",
+                "message": "Promotion report is missing.",
+                "details": {},
+            }
+        )
+
+    if drift_status == "drift_report_missing":
+        alerts.append(
+            {
+                "code": "DRIFT_REPORT_MISSING",
+                "severity": "warn",
+                "message": "Drift report is missing.",
+                "details": {},
+            }
+        )
+
+    if drift_status == "baseline_missing":
+        alerts.append(
+            {
+                "code": "DRIFT_BASELINE_MISSING",
+                "severity": "warn",
+                "message": "Drift baseline is missing for the active champion model.",
+                "details": {
+                    "model_filename": drift.get("model_filename"),
+                },
+            }
+        )
+
+    if drift_detected is True:
+        drifted_count = len(drifted_features)
+        severity = "critical" if drifted_count >= critical_drift_feature_threshold else "warn"
+
+        alerts.append(
+            {
+                "code": "DRIFT_DETECTED",
+                "severity": severity,
+                "message": "Inference drift detected for one or more model input features.",
+                "details": {
+                    "drifted_feature_count": drifted_count,
+                    "drifted_features": drifted_features,
+                    "critical_threshold": critical_drift_feature_threshold,
+                },
+            }
+        )
+
+    if consistency_checks.get("promotion_aligned_to_registry") is False:
+        alerts.append(
+            {
+                "code": "PROMOTION_REGISTRY_MISMATCH",
+                "severity": "critical",
+                "message": "Promotion decision is not aligned with current champion registry.",
+                "details": {
+                    "promotion_aligned_to_registry": False,
+                },
+            }
+        )
+
+    if consistency_checks.get("drift_aligned_to_registry") is False:
+        alerts.append(
+            {
+                "code": "DRIFT_REGISTRY_MISMATCH",
+                "severity": "critical",
+                "message": "Drift report model is not aligned with current champion registry.",
+                "details": {
+                    "drift_aligned_to_registry": False,
+                },
+            }
+        )
+
+    consecutive_rejections = 0
+
+    if benchmark_path.exists():
+        try:
+            benchmark = pd.read_csv(benchmark_path)
+        except pd.errors.EmptyDataError:
+            benchmark = pd.DataFrame()
+
+        if not benchmark.empty and "promotion_reason_code" in benchmark.columns:
+            for _, row in benchmark.iloc[::-1].iterrows():
+                reason = row.get("promotion_reason_code")
+                if not isinstance(reason, str) or not reason.startswith("REJECTED"):
+                    break
+                consecutive_rejections += 1
+
+    if consecutive_rejections >= consecutive_rejection_threshold:
+        alerts.append(
+            {
+                "code": "CONSECUTIVE_PROMOTION_REJECTIONS",
+                "severity": "warn",
+                "message": "Consecutive promotion rejections reached configured threshold.",
+                "details": {
+                    "consecutive_rejections": consecutive_rejections,
+                    "threshold": consecutive_rejection_threshold,
+                },
+            }
+        )
+
+    payload = {
+        "generated_at": datetime.now().isoformat(timespec="seconds"),
+        "status": "ok",
+        "alerts": alerts,
+        "total_alerts": len(alerts),
+        "critical_alerts": sum(1 for alert in alerts if alert["severity"] == "critical"),
+        "warn_alerts": sum(1 for alert in alerts if alert["severity"] == "warn"),
+        "info_alerts": sum(1 for alert in alerts if alert["severity"] == "info"),
+    }
+
+    with open(output_path, "w") as file:
+        json.dump(payload, file, indent=4)
+
+    logger.info(f"Governance alerts saved at {output_path}")
+
 def load_champion_metrics(registry: dict) -> dict | None:
     """
     Load metrics artifact associated with the current champion model.
