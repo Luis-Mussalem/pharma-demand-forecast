@@ -11,6 +11,7 @@ from src.artifacts import (
     load_champion_metrics,
     save_experiment_summary,
     save_governance_summary,
+    save_governance_alerts,
     save_promotion_report,
     should_promote,
     update_benchmark_history,
@@ -578,6 +579,119 @@ class TestGovernanceSummary(unittest.TestCase):
         self.assertIsNone(payload["latest_benchmark"])
         self.assertIsNone(payload["consistency_checks"]["promotion_aligned_to_registry"])
         self.assertIsNone(payload["consistency_checks"]["drift_aligned_to_registry"])
+
+class TestGovernanceAlerts(unittest.TestCase):
+    def setUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.repo_root = Path(self.temp_dir.name)
+        self.original_cwd = Path.cwd()
+
+        (self.repo_root / "artifacts").mkdir(parents=True, exist_ok=True)
+        os.chdir(self.repo_root)
+
+    def tearDown(self):
+        os.chdir(self.original_cwd)
+        self.temp_dir.cleanup()
+
+    def test_warns_when_drift_baseline_is_missing(self):
+        summary = {
+            "promotion": {
+                "report_status": "ok",
+                "latest_decision": {
+                    "champion_after": "model_20260316_161656.pkl",
+                },
+            },
+            "drift": {
+                "report_status": "baseline_missing",
+                "drift_detected": None,
+                "model_filename": "model_20260316_161656.pkl",
+                "drifted_features": [],
+            },
+            "consistency_checks": {
+                "promotion_aligned_to_registry": True,
+                "drift_aligned_to_registry": True,
+            },
+        }
+
+        (self.repo_root / "artifacts" / "governance_summary_latest.json").write_text(
+            json.dumps(summary)
+        )
+
+        save_governance_alerts(self.repo_root / "artifacts")
+
+        output_path = self.repo_root / "artifacts" / "governance_alerts_latest.json"
+        payload = json.loads(output_path.read_text())
+
+        codes = {alert["code"] for alert in payload["alerts"]}
+        self.assertIn("DRIFT_BASELINE_MISSING", codes)
+        self.assertEqual(payload["warn_alerts"], 1)
+
+    def test_flags_critical_mismatch_when_registry_alignment_fails(self):
+        summary = {
+            "promotion": {
+                "report_status": "ok",
+                "latest_decision": {
+                    "champion_after": "model_old.pkl",
+                },
+            },
+            "drift": {
+                "report_status": "ok",
+                "drift_detected": False,
+                "model_filename": "model_other.pkl",
+                "drifted_features": [],
+            },
+            "consistency_checks": {
+                "promotion_aligned_to_registry": False,
+                "drift_aligned_to_registry": False,
+            },
+        }
+
+        (self.repo_root / "artifacts" / "governance_summary_latest.json").write_text(
+            json.dumps(summary)
+        )
+
+        save_governance_alerts(self.repo_root / "artifacts")
+
+        output_path = self.repo_root / "artifacts" / "governance_alerts_latest.json"
+        payload = json.loads(output_path.read_text())
+
+        codes = {alert["code"] for alert in payload["alerts"]}
+        self.assertIn("PROMOTION_REGISTRY_MISMATCH", codes)
+        self.assertIn("DRIFT_REGISTRY_MISMATCH", codes)
+        self.assertEqual(payload["critical_alerts"], 2)
+
+    def test_keeps_alerts_empty_for_healthy_summary(self):
+        summary = {
+            "promotion": {
+                "report_status": "ok",
+                "latest_decision": {
+                    "champion_after": "model_20260316_161656.pkl",
+                },
+            },
+            "drift": {
+                "report_status": "ok",
+                "drift_detected": False,
+                "model_filename": "model_20260316_161656.pkl",
+                "drifted_features": [],
+            },
+            "consistency_checks": {
+                "promotion_aligned_to_registry": True,
+                "drift_aligned_to_registry": True,
+            },
+        }
+
+        (self.repo_root / "artifacts" / "governance_summary_latest.json").write_text(
+            json.dumps(summary)
+        )
+
+        save_governance_alerts(self.repo_root / "artifacts")
+
+        output_path = self.repo_root / "artifacts" / "governance_alerts_latest.json"
+        payload = json.loads(output_path.read_text())
+
+        self.assertEqual(payload["total_alerts"], 0)
+        self.assertEqual(payload["critical_alerts"], 0)
+        self.assertEqual(payload["warn_alerts"], 0)
 
 if __name__ == "__main__":
     unittest.main()
