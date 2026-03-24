@@ -831,6 +831,57 @@ def save_governance_alerts(
 
     logger.info(f"Governance alerts saved at {output_path}")
 
+def save_governance_panel_snapshot(
+    artifacts_dir: Path,
+) -> None:
+    """
+    Save dashboard-friendly governance snapshot for operational consumption.
+    """
+
+    logger.info("Saving governance panel snapshot artifact.")
+
+    artifacts_dir.mkdir(parents=True, exist_ok=True)
+
+    summary_path = artifacts_dir / "governance_summary_latest.json"
+    alerts_path = artifacts_dir / "governance_alerts_latest.json"
+    output_path = artifacts_dir / "governance_panel_latest.json"
+
+    summary = {}
+    alerts = {}
+
+    if summary_path.exists():
+        with open(summary_path, "r") as file:
+            loaded = json.load(file)
+            if isinstance(loaded, dict):
+                summary = loaded
+
+    if alerts_path.exists():
+        with open(alerts_path, "r") as file:
+            loaded = json.load(file)
+            if isinstance(loaded, dict):
+                alerts = loaded
+
+    payload = {
+        "generated_at": datetime.now().isoformat(timespec="seconds"),
+        "champion_model": summary.get("champion", {}).get("model_filename"),
+        "champion_metrics": summary.get("champion", {}).get("metrics"),
+        "promotion_status": summary.get("promotion", {}).get("report_status"),
+        "promotion_latest_decision": summary.get("promotion", {}).get("latest_decision"),
+        "drift_status": summary.get("drift", {}).get("report_status"),
+        "drift_detected": summary.get("drift", {}).get("drift_detected"),
+        "drifted_features": summary.get("drift", {}).get("drifted_features", []),
+        "consistency_checks": summary.get("consistency_checks"),
+        "alerts_total": alerts.get("total_alerts", 0),
+        "alerts_critical": alerts.get("critical_alerts", 0),
+        "alerts_warn": alerts.get("warn_alerts", 0),
+        "alerts_info": alerts.get("info_alerts", 0),
+    }
+
+    with open(output_path, "w") as file:
+        json.dump(payload, file, indent=4)
+
+    logger.info(f"Governance panel snapshot saved at {output_path}")
+
 def load_champion_metrics(registry: dict) -> dict | None:
     """
     Load metrics artifact associated with the current champion model.
