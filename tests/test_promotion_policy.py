@@ -12,6 +12,7 @@ from src.artifacts import (
     save_experiment_summary,
     save_governance_summary,
     save_governance_alerts,
+    save_governance_panel_snapshot,
     save_promotion_report,
     should_promote,
     update_benchmark_history,
@@ -692,6 +693,71 @@ class TestGovernanceAlerts(unittest.TestCase):
         self.assertEqual(payload["total_alerts"], 0)
         self.assertEqual(payload["critical_alerts"], 0)
         self.assertEqual(payload["warn_alerts"], 0)
+
+class TestGovernancePanelSnapshot(unittest.TestCase):
+    def setUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.repo_root = Path(self.temp_dir.name)
+        self.original_cwd = Path.cwd()
+
+        (self.repo_root / "artifacts").mkdir(parents=True, exist_ok=True)
+        os.chdir(self.repo_root)
+
+    def tearDown(self):
+        os.chdir(self.original_cwd)
+        self.temp_dir.cleanup()
+
+    def test_generates_dashboard_friendly_snapshot(self):
+        summary = {
+            "champion": {
+                "model_filename": "model_20260319_183955.pkl",
+                "metrics": {"MAE": 508.36, "RMSE": 779.23},
+            },
+            "promotion": {
+                "report_status": "ok",
+                "latest_decision": {
+                    "reason_code": "REJECTED_ABSOLUTE_AND_RELATIVE",
+                    "champion_after": "model_20260319_183955.pkl",
+                },
+            },
+            "drift": {
+                "report_status": "ok",
+                "drift_detected": False,
+                "drifted_features": [],
+            },
+            "consistency_checks": {
+                "promotion_aligned_to_registry": True,
+                "drift_aligned_to_registry": True,
+            },
+        }
+
+        alerts = {
+            "total_alerts": 1,
+            "critical_alerts": 0,
+            "warn_alerts": 1,
+            "info_alerts": 0,
+        }
+
+        (self.repo_root / "artifacts" / "governance_summary_latest.json").write_text(
+            json.dumps(summary)
+        )
+        (self.repo_root / "artifacts" / "governance_alerts_latest.json").write_text(
+            json.dumps(alerts)
+        )
+
+        save_governance_panel_snapshot(self.repo_root / "artifacts")
+
+        output_path = self.repo_root / "artifacts" / "governance_panel_latest.json"
+        self.assertTrue(output_path.exists())
+
+        payload = json.loads(output_path.read_text())
+
+        self.assertEqual(payload["champion_model"], "model_20260319_183955.pkl")
+        self.assertEqual(payload["promotion_status"], "ok")
+        self.assertEqual(payload["alerts_total"], 1)
+        self.assertEqual(payload["alerts_warn"], 1)
+        self.assertEqual(payload["alerts_critical"], 0)
+        self.assertEqual(payload["alerts_info"], 0)
 
 if __name__ == "__main__":
     unittest.main()
