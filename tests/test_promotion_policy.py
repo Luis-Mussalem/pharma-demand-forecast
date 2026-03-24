@@ -694,8 +694,8 @@ class TestGovernanceAlerts(unittest.TestCase):
         self.assertEqual(payload["critical_alerts"], 0)
         self.assertEqual(payload["warn_alerts"], 0)
 
-    def test_triggers_consecutive_rejection_alert_with_custom_threshold(self):
-        summary = {
+def test_triggers_consecutive_rejection_alert_with_custom_threshold(self):
+    summary = {
         "promotion": {
             "report_status": "ok",
             "latest_decision": {
@@ -712,18 +712,18 @@ class TestGovernanceAlerts(unittest.TestCase):
             "promotion_aligned_to_registry": True,
             "drift_aligned_to_registry": True,
         },
-        }
+    }
 
-        (self.repo_root / "artifacts" / "governance_summary_latest.json").write_text(
+    (self.repo_root / "artifacts" / "governance_summary_latest.json").write_text(
         json.dumps(summary)
-        )
+    )
 
-        pd.DataFrame(
+    pd.DataFrame(
         [
             {"promotion_reason_code": "REJECTED_RELATIVE_THRESHOLD"},
             {"promotion_reason_code": "REJECTED_ABSOLUTE_THRESHOLD"},
         ]
-        ).to_csv(self.repo_root / "artifacts" / "benchmark_history.csv", index=False)
+    ).to_csv(self.repo_root / "artifacts" / "benchmark_history.csv", index=False)
 
     save_governance_alerts(
         self.repo_root / "artifacts",
