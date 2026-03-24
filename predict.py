@@ -3,6 +3,8 @@ import argparse
 from pathlib import Path
 from datetime import datetime
 
+from traitlets import config
+
 from src.ingestion import load_data
 from src.config_loader import load_config
 from src.inference import get_latest_model_path, load_model, run_inference
@@ -93,8 +95,19 @@ def main():
         artifacts_dir=Path("artifacts"),
     )
 
+    governance_alerts_config = (
+        config.get("governance", {})
+        .get("alerts", {})
+    )
+
     save_governance_alerts(
         artifacts_dir=Path("artifacts"),
+        consecutive_rejection_threshold=int(
+        governance_alerts_config.get("consecutive_rejection_threshold", 3)
+    ),
+        critical_drift_feature_threshold=int(
+        governance_alerts_config.get("critical_drift_feature_threshold", 5)
+    ),
     )
 
     save_governance_panel_snapshot(
