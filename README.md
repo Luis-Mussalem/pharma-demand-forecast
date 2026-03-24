@@ -304,21 +304,22 @@ Detailed technical decisions, trade-offs and architectural evolution are documen
 
 ## Project Status
 
-- Champion governance: [model_registry.yaml](http://_vscodecontentref_/25)
+- Champion governance: model_registry.yaml
 - Promotion policy: benchmark-aware and threshold-based
-- Promotion decision explainability: evaluate_promotion in [artifacts.py](http://_vscodecontentref_/26)
+- Promotion decision explainability: evaluate_promotion in src/artifacts.py
 - Compatibility wrapper preserved: should_promote delegates to evaluate_promotion
 - Promotion audit persisted in experiment_summary_YYYYMMDD_HHMMSS.json and benchmark_history.csv
-- Promotion report artifact: [promotion_report_latest.json](http://_vscodecontentref_/27)
+- Promotion report artifact: artifacts/promotion_report_latest.json
 - Champion baseline metrics loaded from active artifacts with archive fallback
 - Archive rotation preserves active champion model and champion baseline metrics
 - Distribution baseline persisted per training run: artifacts/distribution_baseline_YYYYMMDD_HHMMSS.json
-- Inference drift report persisted as latest runtime signal: [drift_report_latest.json](http://_vscodecontentref_/28)
+- Inference drift report persisted as latest runtime signal: artifacts/drift_report_latest.json
 - Drift baseline lookup is aligned to the active model consumed in inference
-- Regression tests: tests/test_model_governance.py, tests/test_promotion_policy.py, [test_drift_monitoring.py](http://_vscodecontentref_/29)
-- Unified governance observability snapshot persisted as latest operational state: artifacts/governance_summary_latest.json
-- Governance summary consolidates champion registry, promotion latest decision, drift latest status, and benchmark latest row
-- Consistency checks persisted for registry alignment across promotion and drift reports
+- Unified governance observability snapshot persisted: artifacts/governance_summary_latest.json
+- Governance alerts artifact persisted: artifacts/governance_alerts_latest.json
+- Dashboard-friendly governance panel snapshot persisted: artifacts/governance_panel_latest.json
+- Governance alerts support configurable thresholds via runtime config
+- Regression tests cover promotion, drift, model governance, panel snapshot, and configurable alert threshold
 
 ### Verification (recommended)
 
@@ -334,9 +335,10 @@ Detailed technical decisions, trade-offs and architectural evolution are documen
 
 Next stages of the project include:
 
-- dashboard consumption of unified governance observability snapshot
+- dashboard integration over governance_panel_latest.json
 - store-level drift segmentation and monitoring
-- alert thresholds by feature family
+- alert thresholds by feature family with policy profiles
+- unified observability layer for promotion and drift lifecycle trends
 
 ---
 
