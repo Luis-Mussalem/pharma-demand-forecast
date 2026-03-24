@@ -1484,3 +1484,57 @@ It improves:
 Day 15 closed with unified governance observability snapshot persistence and cross-layer contract alignment after inference integration fix.
 Suggested tag: day15-governance-observability-snapshot
 
+## Day 16 — Governance Alerts Parameterization and Panel Snapshot Consolidation
+
+### Decision
+
+Completed governance observability maturation by:
+- consolidating dashboard-friendly governance panel snapshot usage
+- parameterizing governance alert sensitivity through runtime config
+- expanding regression coverage for configurable alert thresholds
+
+### Why
+
+After Day 15, governance observability existed, but alert sensitivity still depended on default runtime parameters and panel-oriented consumption needed explicit closure as an operational contract.
+
+Day 16 focused on turning observability into a tunable governance layer without changing core business rules.
+
+### Implementation
+
+- Confirmed unified panel snapshot persistence:
+  - artifacts/governance_panel_latest.json
+- Externalized governance alert sensitivity to configuration:
+  - governance.alerts.consecutive_rejection_threshold
+  - governance.alerts.critical_drift_feature_threshold
+- Wired config-driven thresholds into runtime orchestrators:
+  - main.py
+  - predict.py
+- Expanded regression coverage in tests/test_promotion_policy.py:
+  - custom threshold path for consecutive rejection alert
+  - governance panel snapshot generation
+
+### Engineering Insight
+
+This step separates policy tuning from code logic.
+Operational teams can now adjust alert sensitivity via configuration, preserving ownership boundaries and reducing runtime change risk.
+
+### Verification
+
+- python -m unittest discover -s tests -p "test_promotion_policy.py" -v → OK
+- python -m unittest discover -s tests -p "test_drift_monitoring.py" -v → OK
+- python -m unittest discover -s tests -p "test_model_governance.py" -v → OK
+- python main.py --config config/pipeline_config.yaml → completed successfully
+- python predict.py --config config/pipeline_config.yaml → completed successfully
+
+### Remaining TODOs / Next Step
+
+- Publish governance panel fields to Power BI semantic model.
+- Start segmented governance visibility:
+  - store-level drift segmentation
+  - feature-family alert rollups
+
+### Closure Note
+
+Day 16 closed with configurable governance thresholds and panel-oriented observability consolidation.
+Suggested tag: day16-governance-thresholds-and-panel-ready
+
