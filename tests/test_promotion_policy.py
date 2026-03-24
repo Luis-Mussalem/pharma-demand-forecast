@@ -694,6 +694,50 @@ class TestGovernanceAlerts(unittest.TestCase):
         self.assertEqual(payload["critical_alerts"], 0)
         self.assertEqual(payload["warn_alerts"], 0)
 
+    def test_triggers_consecutive_rejection_alert_with_custom_threshold(self):
+        summary = {
+        "promotion": {
+            "report_status": "ok",
+            "latest_decision": {
+                "champion_after": "model_20260316_161656.pkl",
+            },
+        },
+        "drift": {
+            "report_status": "ok",
+            "drift_detected": False,
+            "model_filename": "model_20260316_161656.pkl",
+            "drifted_features": [],
+        },
+        "consistency_checks": {
+            "promotion_aligned_to_registry": True,
+            "drift_aligned_to_registry": True,
+        },
+        }
+
+        (self.repo_root / "artifacts" / "governance_summary_latest.json").write_text(
+        json.dumps(summary)
+        )
+
+        pd.DataFrame(
+        [
+            {"promotion_reason_code": "REJECTED_RELATIVE_THRESHOLD"},
+            {"promotion_reason_code": "REJECTED_ABSOLUTE_THRESHOLD"},
+        ]
+        ).to_csv(self.repo_root / "artifacts" / "benchmark_history.csv", index=False)
+
+    save_governance_alerts(
+        self.repo_root / "artifacts",
+        consecutive_rejection_threshold=2,
+        critical_drift_feature_threshold=5,
+    )
+
+    output_path = self.repo_root / "artifacts" / "governance_alerts_latest.json"
+    payload = json.loads(output_path.read_text())
+
+    codes = {alert["code"] for alert in payload["alerts"]}
+    self.assertIn("CONSECUTIVE_PROMOTION_REJECTIONS", codes)
+    self.assertEqual(payload["warn_alerts"], 1)
+
 class TestGovernancePanelSnapshot(unittest.TestCase):
     def setUp(self):
         self.temp_dir = tempfile.TemporaryDirectory()
