@@ -14,6 +14,7 @@ from src.artifacts import (
     save_drift_report,
     save_governance_summary,
     save_governance_alerts,
+    save_governance_panel_snapshot,
     save_inference_predictions,
 )
 
@@ -93,6 +94,10 @@ def main():
     )
 
     save_governance_alerts(
+        artifacts_dir=Path("artifacts"),
+    )
+
+    save_governance_panel_snapshot(
         artifacts_dir=Path("artifacts"),
     )
 
