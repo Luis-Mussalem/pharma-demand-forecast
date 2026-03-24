@@ -24,3 +24,8 @@ inference:
 
 drift:
   z_score_threshold: 3.0
+
+givernance:
+  alerts:
+    consecutive_drift_threshold: 3
+    critical_drift_threshold: 5
