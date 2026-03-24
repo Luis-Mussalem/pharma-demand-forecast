@@ -256,8 +256,19 @@ def main():
             artifacts_dir=artifacts_dir,
         )
 
+        governance_alerts_config = (
+            config.get("governance", {})
+            .get("alerts", {})
+        )
+
         save_governance_alerts(
             artifacts_dir=artifacts_dir,
+            consecutive_rejection_threshold=int(
+            governance_alerts_config.get("consecutive_rejection_threshold", 3)
+        ),
+            critical_drift_feature_threshold=int(
+            governance_alerts_config.get("critical_drift_feature_threshold", 5)
+        ),
         )
 
         save_governance_panel_snapshot(
