@@ -1538,3 +1538,58 @@ Operational teams can now adjust alert sensitivity via configuration, preserving
 Day 16 closed with configurable governance thresholds and panel-oriented observability consolidation.
 Suggested tag: day16-governance-thresholds-and-panel-ready
 
+---
+
+## Day 17 — Power BI Flat Export and Semantic Contract
+
+### What
+
+Completed the governance observability consumption layer by:
+- implementing flat CSV export from governance panel for Power BI direct consumption
+- defining explicit semantic contract for Power BI field mapping and refresh semantics
+
+### Why
+
+After Day 16, governance_panel_latest.json provided unified snapshot data, but its nested JSON structure required manual Power BI transformation without a governed contract.
+
+Day 17 established the consumption layer: a flat, single-row CSV contract that Power BI can ingest directly without transformation logic.
+
+### Implementation
+
+- Added save_powerbi_export() to src/artifacts.py:
+  - reads governance_panel_latest.json
+  - flattens all nested fields into a single-row CSV
+  - persists to artifacts/powerbi_export_latest.csv
+- Wired save_powerbi_export into training pipeline: main.py
+- Wired save_powerbi_export into inference pipeline: predict.py
+- Created semantic contract document: powerbi/governance_panel_contract.md
+  - 19-field schema contract with types, nullability, semantic rules
+  - recommended Power BI model mapping
+  - data quality checks for refresh validation
+
+### Engineering Insight
+
+The flat CSV export separates the internal pipeline governance representation (nested JSON) from the analytical consumption contract (tabular CSV). This prevents BI layer from depending on internal JSON schema evolution and makes the refresh contract explicit and stable.
+
+### Verification
+
+- python -m unittest discover -s tests -p "test_promotion_policy.py" -v → 30 tests OK (including TestPowerBIExport)
+- python -m unittest discover -s tests -p "test_model_governance.py" -v → 4 tests OK
+- python -m unittest discover -s tests -p "test_drift_monitoring.py" -v → 8 tests OK
+- python main.py --config config/pipeline_config.yaml → completed successfully
+- python predict.py --config config/pipeline_config.yaml → completed successfully
+- artifacts/powerbi_export_latest.csv generated with 19 columns and 1 row
+
+### Remaining TODOs / Next Step
+
+- Connect Power BI Desktop to artifacts/powerbi_export_latest.csv
+- Build governance dashboard visuals:
+  - champion MAE trend
+  - promotion status card
+  - alerts severity indicator
+  - drift status card
+
+### Closure Note
+
+Day 17 closed with flat export contract and Power BI semantic document ready for dashboard connection.
+Suggested tag: day17-powerbi-export-contract-ready
