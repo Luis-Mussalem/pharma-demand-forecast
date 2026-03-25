@@ -898,12 +898,33 @@ class TestPowerBIBenchmarkExport(unittest.TestCase):
         df = pd.read_csv(output_path)
         self.assertEqual(len(df), 1)
         self.assertIn("run_timestamp", df.columns)
+        self.assertIn("run_datetime", df.columns)
         self.assertIn("mae", df.columns)
         self.assertIn("rmse", df.columns)
         self.assertIn("promoted", df.columns)
         self.assertIn("promotion_reason_code", df.columns)
         self.assertEqual(df["mae"].iloc[0], 503.0)
+        self.assertEqual(df["run_datetime"].iloc[0], "2026-03-18T10:00:00")
         self.assertTrue(df["promoted"].iloc[0])
+
+    def test_defaults_promoted_to_false_when_audit_is_missing(self):
+        pd.DataFrame([
+            {
+                "timestamp": "20260318_100000",
+                "model": "hist_gradient_boosting",
+                "features_used": "calendar|lag|rolling|promo",
+                "MAE": 503.0,
+                "RMSE": 750.0,
+            }
+        ]).to_csv(self.test_dir / "benchmark_history.csv", index=False)
+
+        save_powerbi_benchmark_export(artifacts_dir=self.test_dir)
+
+        output_path = self.test_dir / "powerbi_benchmark_export_latest.csv"
+        self.assertTrue(output_path.exists())
+
+        df = pd.read_csv(output_path)
+        self.assertFalse(df["promoted"].iloc[0])
 
     def test_skips_export_when_benchmark_missing(self):
         save_powerbi_benchmark_export(artifacts_dir=self.test_dir)
