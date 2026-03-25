@@ -27,5 +27,5 @@ drift:
 
 governance:
   alerts:
-    consecutive_drift_threshold: 3
-    critical_drift_threshold: 5
+    consecutive_rejection_threshold: 3
+    critical_drift_feature_threshold: 5
