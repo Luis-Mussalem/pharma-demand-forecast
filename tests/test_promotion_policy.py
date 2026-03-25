@@ -15,6 +15,7 @@ from src.artifacts import (
     save_governance_alerts,
     save_governance_panel_snapshot,
     save_powerbi_export,
+    save_powerbi_benchmark_export,
     save_promotion_report,
     should_promote,
     update_benchmark_history,
@@ -859,6 +860,60 @@ class TestPowerBIExport(unittest.TestCase):
     def test_skips_export_when_panel_missing(self):
         save_powerbi_export(artifacts_dir=self.test_dir)
         output_path = self.test_dir / "powerbi_export_latest.csv"
+        self.assertFalse(output_path.exists())
+
+class TestPowerBIBenchmarkExport(unittest.TestCase):
+    def setUp(self):
+        self.test_dir = Path(tempfile.mkdtemp())
+
+    def tearDown(self):
+        shutil.rmtree(self.test_dir)
+
+    def test_generates_flat_csv_from_benchmark_history(self):
+        pd.DataFrame([
+            {
+                "timestamp": "20260318_100000",
+                "model": "hist_gradient_boosting",
+                "features_used": "calendar|lag|rolling|promo",
+                "MAE": 503.0,
+                "RMSE": 750.0,
+                "train_rows": 900000,
+                "validation_rows": 100000,
+                "promoted_to_champion": True,
+                "promotion_reason_code": "PROMOTED_THRESHOLD_MET",
+                "champion_before": "model_old.pkl",
+                "champion_after": "model_new.pkl",
+                "challenger_metric_value": 503.0,
+                "champion_metric_value": 510.0,
+                "absolute_improvement": 7.0,
+                "relative_improvement": 0.013725,
+            }
+        ]).to_csv(self.test_dir / "benchmark_history.csv", index=False)
+
+        save_powerbi_benchmark_export(artifacts_dir=self.test_dir)
+
+        output_path = self.test_dir / "powerbi_benchmark_export_latest.csv"
+        self.assertTrue(output_path.exists())
+
+        df = pd.read_csv(output_path)
+        self.assertEqual(len(df), 1)
+        self.assertIn("run_timestamp", df.columns)
+        self.assertIn("mae", df.columns)
+        self.assertIn("rmse", df.columns)
+        self.assertIn("promoted", df.columns)
+        self.assertIn("promotion_reason_code", df.columns)
+        self.assertEqual(df["mae"].iloc[0], 503.0)
+        self.assertTrue(df["promoted"].iloc[0])
+
+    def test_skips_export_when_benchmark_missing(self):
+        save_powerbi_benchmark_export(artifacts_dir=self.test_dir)
+        output_path = self.test_dir / "powerbi_benchmark_export_latest.csv"
+        self.assertFalse(output_path.exists())
+
+    def test_skips_export_when_benchmark_empty(self):
+        pd.DataFrame().to_csv(self.test_dir / "benchmark_history.csv", index=False)
+        save_powerbi_benchmark_export(artifacts_dir=self.test_dir)
+        output_path = self.test_dir / "powerbi_benchmark_export_latest.csv"
         self.assertFalse(output_path.exists())
 
 if __name__ == "__main__":
