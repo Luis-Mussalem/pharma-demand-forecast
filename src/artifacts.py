@@ -942,7 +942,7 @@ def save_powerbi_benchmark_export(
     """
     Save flat CSV export of benchmark history for Power BI trend consumption.
     Reads benchmark_history.csv and produces a renamed, BI-friendly version
-    with explicit column names and parsed boolean promotion flag.
+    with explicit column names and stable analytical types.
     Skips silently if benchmark_history.csv does not exist or is empty.
     """
 
@@ -972,15 +972,30 @@ def save_powerbi_benchmark_export(
         logger.warning("benchmark_history.csv missing required columns. Skipping Power BI benchmark export.")
         return
 
+    run_datetime = pd.to_datetime(
+        df["timestamp"],
+        format="%Y%m%d_%H%M%S",
+        errors="coerce",
+    )
+
+    promoted = (
+        df.get("promoted_to_champion")
+        .fillna(False)
+        .astype(bool)
+        if "promoted_to_champion" in df.columns
+        else pd.Series(False, index=df.index)
+    )
+
     export = pd.DataFrame()
     export["run_timestamp"] = df["timestamp"]
+    export["run_datetime"] = run_datetime.dt.strftime("%Y-%m-%dT%H:%M:%S")
     export["model_name"] = df.get("model")
     export["features_used"] = df.get("features_used")
     export["train_rows"] = df.get("train_rows")
     export["validation_rows"] = df.get("validation_rows")
     export["mae"] = df.get("MAE")
     export["rmse"] = df.get("RMSE")
-    export["promoted"] = df.get("promoted_to_champion")
+    export["promoted"] = promoted
     export["promotion_reason_code"] = df.get("promotion_reason_code")
     export["champion_before"] = df.get("champion_before")
     export["champion_after"] = df.get("champion_after")
