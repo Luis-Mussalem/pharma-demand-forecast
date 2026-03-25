@@ -1649,3 +1649,64 @@ This reduces Power BI-side transformation logic and enforces stable analytical s
 
 Day 18 documentation closed with benchmark trend contract and stable BI-ready historical export.
 Suggested tag: day18-observability-trend-contract-ready
+
+---
+
+## Day 19 — Power BI Governance Dashboard Construction and Debugging
+
+### What
+
+Built the Power BI governance observability dashboard using the two governed artifacts:
+- artifacts/powerbi_export_latest.csv → GovernancePanelLatest table
+- artifacts/powerbi_benchmark_export_latest.csv → BenchmarkHistory table
+
+Resolved five classes of Power BI import and DAX errors before functional KPI cards were established.
+
+### Why
+
+Day 18 produced stable, governed CSV artifacts with semantic contracts. Day 19 connects those artifacts to an interactive observability surface that makes pipeline governance visible without inspecting raw files.
+
+### Debugging Work — Power BI Layer
+
+Five non-trivial errors were encountered and resolved during dashboard construction:
+
+**1. pt-BR locale numeric corruption**
+mae and rmse values imported as scientific notation (5.08E+15) due to Power BI treating the English decimal point as a thousands separator on pt-BR locale machines. Fixed by rebuilding the Power Query query from scratch in Advanced Editor with explicit Table.TransformColumnTypes(..., "en-US") locale declaration.
+
+**2. type logical silent row exclusion**
+Casting promoted to type logical in Power Query caused all 26 rows to be silently excluded from the DAX model during load — preview showed correct data, DAX returned BLANK. Fixed by keeping promoted as type text and using LOWER() string comparison in DAX.
+
+**3. COUNTROWS of empty filtered set returns BLANK**
+CALCULATE(COUNTROWS(...), filter) returns BLANK (not 0) when the filter matches zero rows. DIVIDE(BLANK, N, 0) propagates BLANK because the alternate result only activates on zero denominator — not BLANK numerator. Fixed by using SUMX(..., IF(..., 1, 0)) which always returns a numeric value.
+
+**4. Multiple DAX measures in single formula editor**
+Pasting multiple Measure = ... definitions into one measure's formula bar caused syntax errors. Each measure must be edited individually.
+
+**5. ALL() wrapper required for context-independent measures**
+COUNTROWS(BenchmarkHistory) returned BLANK in Card visuals due to residual filter context. Fixed with COUNTROWS(ALL(BenchmarkHistory)).
+
+### Implementation
+
+- Power Query: two queries (GovernancePanelLatest, BenchmarkHistory) with locale-safe numeric import
+- DAX measures established and verified:
+  - Champion MAE = 508,37 ✓
+  - Champion RMSE = 779,23 ✓
+  - Rows Benchmark = 26 ✓
+  - Audited Rows = 26 ✓
+  - Promoted Rows = 0 ✓
+  - Rejection Count = 26 ✓
+  - Promotion Rate % = 0,00% ✓
+
+### Engineering Insight
+
+The Power BI layer exposed three independent failure modes (locale, type system, DAX evaluation semantics) that are invisible in the Python pipeline. This confirms that the BI consumption layer requires its own validation discipline — semantic contracts alone are insufficient without verifying that numeric types, boolean representations, and DAX evaluation context behave as expected end-to-end.
+
+### Remaining Work
+
+- Build Line chart visuals: MAE trend and RMSE trend by run_datetime
+- Build remaining KPI cards from GovernancePanelLatest (alerts, drift status, promotion status, champion model)
+- Format measures (Promotion Rate % as percentage, MAE/RMSE with 2 decimal places)
+
+### Closure Note
+
+Day 19 in progress. KPI measures validated. Dashboard visuals pending.

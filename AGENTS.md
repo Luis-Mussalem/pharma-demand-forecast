@@ -1062,3 +1062,128 @@ does this recreate a solved duplication?
 does this violate an existing ownership boundary?
 
 does this hide a runtime assumption already documented?
+
+Historical Error 14 — Power BI pt-BR Locale Numeric Parsing
+Error Observed
+
+Numeric columns like mae (508.3677) appeared as 5.08E+15 in Power BI after import.
+
+Root Cause
+
+Power BI Desktop on pt-BR locale treats the English period (.) as a thousands separator, not a decimal separator. Auto-inferred type conversion corrupted all numeric values silently.
+
+Correct Fix Applied
+
+Rebuild Power Query query from scratch in Advanced Editor.
+Apply Table.TransformColumnTypes with explicit locale "en-US" BEFORE any other type cast:
+
+Table.TransformColumnTypes(#"Promoted Headers", {{"mae", type number}, ...}, "en-US")
+
+Steps must be: Source → Promoted Headers → Changed Type with Locale → Changed Type.
+
+Architectural Lesson
+
+Never allow Power BI to auto-infer numeric types from CSVs on non-English locale machines. Locale must be declared explicitly at the import boundary.
+
+Anti-Regression Rule
+
+Always use Advanced Editor with full let...in block and explicit "en-US" locale for numeric and datetime columns in Power Query.
+
+---
+
+Historical Error 15 — type logical Silent Row Exclusion on Load
+Error Observed
+
+promoted column cast to type logical in Power Query showed correct values ("False") in preview but caused COUNTROWS(BenchmarkHistory) to return BLANK in DAX after Close & Apply.
+
+Root Cause
+
+Python-serialized boolean strings ("False"/"True" with capital first letter) are not recognized by Power BI's logical parser during model load. The conversion fails silently, excluding all rows from the column's type enforcement and producing a zero-row effective table in the DAX engine.
+
+Correct Fix Applied
+
+Changed {"promoted", type logical} to {"promoted", type text} in the Changed Type step.
+DAX measures use LOWER(BenchmarkHistory[promoted]) = "true" for boolean semantics.
+
+Architectural Lesson
+
+type logical in Power Query is only safe for columns already containing true/false (lowercase) or 0/1. Python-serialized booleans require type text and DAX-level interpretation.
+
+Anti-Regression Rule
+
+Never cast Python-serialized boolean columns to type logical in Power Query. Keep as type text and handle in DAX.
+
+---
+
+Historical Error 16 — COUNTROWS of Empty Filtered Set Returns BLANK
+Error Observed
+
+CALCULATE(COUNTROWS(BenchmarkHistory), filter_condition) returned BLANK when no rows matched the filter. DIVIDE(BLANK, 26, 0) also returned BLANK — not 0.
+
+Root Cause
+
+In DAX, COUNTROWS of an empty table returns BLANK, not 0. DIVIDE alternate result (third argument) only activates when the denominator is zero — not when the numerator is BLANK.
+
+Correct Fix Applied
+
+Replaced CALCULATE + COUNTROWS with SUMX:
+
+SUMX(ALL(BenchmarkHistory), IF(LOWER(BenchmarkHistory[promoted]) = "true", 1, 0))
+
+SUMX always returns a numeric value (minimum 0), never BLANK.
+
+Architectural Lesson
+
+COUNTROWS is not safe for aggregation when the filtered set may be empty. SUMX with IF(..., 1, 0) is the correct pattern for conditional counting in DAX.
+
+Anti-Regression Rule
+
+Use SUMX(..., IF(..., 1, 0)) for all conditional row counts in DAX. Never rely on CALCULATE + COUNTROWS when empty result is a valid state.
+
+---
+
+Historical Error 17 — Multiple DAX Measures Written in Single Formula Editor
+Error Observed
+
+"The syntax for 'Audited' is incorrect" after pasting multiple measure definitions into one formula bar.
+
+Root Cause
+
+Power BI formula bar accepts only one measure definition at a time. Pasting multiple Measure = ... blocks into a single measure's editor is a syntax error.
+
+Correct Fix Applied
+
+Each measure created and edited individually — one formula per measure editor session.
+
+Architectural Lesson
+
+Power BI DAX editor is not a script editor. One measure = one edit session.
+
+Anti-Regression Rule
+
+Never paste multiple DAX measure definitions into a single formula bar. Always edit one measure at a time.
+
+---
+
+Historical Error 18 — Cross-Table Filter Context Causing BLANK on Independent Tables
+Error Observed
+
+Rows Benchmark = COUNTROWS(BenchmarkHistory) returned BLANK inside a Card visual even though data existed in the table.
+
+Root Cause
+
+An implicit or explicit relationship between GovernancePanelLatest and BenchmarkHistory caused filter context from one table to propagate to the other, reducing the effective row count to zero in the visual context.
+
+Correct Fix Applied
+
+Verified no relationship existed in Model View. Applied ALL(BenchmarkHistory) wrapper in affected measures to break any residual filter context:
+
+COUNTROWS(ALL(BenchmarkHistory))
+
+Architectural Lesson
+
+In Power BI, independent governance tables must have no relationships between them. GovernancePanelLatest (snapshot) and BenchmarkHistory (trend) are architecturally independent and must remain unrelated in the data model.
+
+Anti-Regression Rule
+
+Never create relationships between GovernancePanelLatest and BenchmarkHistory. Use ALL() wrapper on measures that must ignore filter context from other tables.
