@@ -158,6 +158,26 @@ The user must be able to understand not only what changes, but what the final co
 
 Code Delivery Standard
 
+Enforcement Addendum — Mandatory Delivery Shape
+
+For every implementation response, the assistant must include:
+
+Exact insertion instruction
+exact file path
+exact anchor block
+exact insertion point (before/after which line/block)
+Full final code block
+never send partial delta when local structure matters
+always send the complete final function or complete final local block
+Explicit replacement instruction
+state exactly what to replace
+state exact final text that must remain in file
+Verification closure
+exact test command
+expected result
+executable git add + git commit command block
+If any of these items is missing, the response is non-compliant.
+
 Whenever a function is modified:
 
 Do not describe only the delta.
