@@ -4,6 +4,7 @@ import tempfile
 import unittest
 import pandas as pd
 from pathlib import Path
+import shutil
 
 from src.artifacts import (
     archive_previous_artifacts,
@@ -13,6 +14,7 @@ from src.artifacts import (
     save_governance_summary,
     save_governance_alerts,
     save_governance_panel_snapshot,
+    save_powerbi_export,
     save_promotion_report,
     should_promote,
     update_benchmark_history,
@@ -694,49 +696,49 @@ class TestGovernanceAlerts(unittest.TestCase):
         self.assertEqual(payload["critical_alerts"], 0)
         self.assertEqual(payload["warn_alerts"], 0)
 
-def test_triggers_consecutive_rejection_alert_with_custom_threshold(self):
-    summary = {
-        "promotion": {
-            "report_status": "ok",
-            "latest_decision": {
-                "champion_after": "model_20260316_161656.pkl",
+    def test_triggers_consecutive_rejection_alert_with_custom_threshold(self):
+        summary = {
+            "promotion": {
+                "report_status": "ok",
+                "latest_decision": {
+                    "champion_after": "model_20260316_161656.pkl",
+                },
             },
-        },
-        "drift": {
-            "report_status": "ok",
-            "drift_detected": False,
-            "model_filename": "model_20260316_161656.pkl",
-            "drifted_features": [],
-        },
-        "consistency_checks": {
-            "promotion_aligned_to_registry": True,
-            "drift_aligned_to_registry": True,
-        },
-    }
+            "drift": {
+                "report_status": "ok",
+                "drift_detected": False,
+                "model_filename": "model_20260316_161656.pkl",
+                "drifted_features": [],
+            },
+            "consistency_checks": {
+                "promotion_aligned_to_registry": True,
+                "drift_aligned_to_registry": True,
+            },
+        }
 
-    (self.repo_root / "artifacts" / "governance_summary_latest.json").write_text(
-        json.dumps(summary)
-    )
+        (self.repo_root / "artifacts" / "governance_summary_latest.json").write_text(
+            json.dumps(summary)
+        )
 
-    pd.DataFrame(
-        [
-            {"promotion_reason_code": "REJECTED_RELATIVE_THRESHOLD"},
-            {"promotion_reason_code": "REJECTED_ABSOLUTE_THRESHOLD"},
-        ]
-    ).to_csv(self.repo_root / "artifacts" / "benchmark_history.csv", index=False)
+        pd.DataFrame(
+            [
+                {"promotion_reason_code": "REJECTED_RELATIVE_THRESHOLD"},
+                {"promotion_reason_code": "REJECTED_ABSOLUTE_THRESHOLD"},
+            ]
+        ).to_csv(self.repo_root / "artifacts" / "benchmark_history.csv", index=False)
 
-    save_governance_alerts(
-        self.repo_root / "artifacts",
-        consecutive_rejection_threshold=2,
-        critical_drift_feature_threshold=5,
-    )
+        save_governance_alerts(
+            self.repo_root / "artifacts",
+            consecutive_rejection_threshold=2,
+            critical_drift_feature_threshold=5,
+        )
 
-    output_path = self.repo_root / "artifacts" / "governance_alerts_latest.json"
-    payload = json.loads(output_path.read_text())
+        output_path = self.repo_root / "artifacts" / "governance_alerts_latest.json"
+        payload = json.loads(output_path.read_text())
 
-    codes = {alert["code"] for alert in payload["alerts"]}
-    self.assertIn("CONSECUTIVE_PROMOTION_REJECTIONS", codes)
-    self.assertEqual(payload["warn_alerts"], 1)
+        codes = {alert["code"] for alert in payload["alerts"]}
+        self.assertIn("CONSECUTIVE_PROMOTION_REJECTIONS", codes)
+        self.assertEqual(payload["warn_alerts"], 1)
 
 class TestGovernancePanelSnapshot(unittest.TestCase):
     def setUp(self):
@@ -802,6 +804,62 @@ class TestGovernancePanelSnapshot(unittest.TestCase):
         self.assertEqual(payload["alerts_warn"], 1)
         self.assertEqual(payload["alerts_critical"], 0)
         self.assertEqual(payload["alerts_info"], 0)
+
+class TestPowerBIExport(unittest.TestCase):
+    def setUp(self):
+        self.test_dir = Path(tempfile.mkdtemp())
+
+    def tearDown(self):
+        shutil.rmtree(self.test_dir)
+
+    def test_generates_flat_csv_from_panel(self):
+        panel = {
+            "generated_at": "2026-03-25T10:00:00",
+            "champion_model": "model_test.pkl",
+            "champion_metrics": {"MAE": 500.0, "RMSE": 750.0},
+            "promotion_status": "ok",
+            "promotion_latest_decision": {
+                "reason_code": "PROMOTED",
+                "promoted": True,
+                "challenger_metric_value": 500.0,
+                "champion_before": "model_old.pkl",
+                "champion_after": "model_test.pkl",
+            },
+            "drift_status": "ok",
+            "drift_detected": False,
+            "drifted_features": [],
+            "consistency_checks": {
+                "promotion_aligned_to_registry": True,
+                "drift_aligned_to_registry": True,
+            },
+            "alerts_total": 0,
+            "alerts_critical": 0,
+            "alerts_warn": 0,
+            "alerts_info": 0,
+        }
+
+        panel_path = self.test_dir / "governance_panel_latest.json"
+        with open(panel_path, "w") as f:
+            json.dump(panel, f)
+
+        save_powerbi_export(artifacts_dir=self.test_dir)
+
+        output_path = self.test_dir / "powerbi_export_latest.csv"
+        self.assertTrue(output_path.exists())
+
+        df = pd.read_csv(output_path)
+        self.assertEqual(len(df), 1)
+        self.assertIn("champion_mae", df.columns)
+        self.assertIn("promotion_reason_code", df.columns)
+        self.assertIn("drifted_features_count", df.columns)
+        self.assertIn("alerts_total", df.columns)
+        self.assertEqual(df["champion_mae"].iloc[0], 500.0)
+        self.assertEqual(df["drifted_features_count"].iloc[0], 0)
+
+    def test_skips_export_when_panel_missing(self):
+        save_powerbi_export(artifacts_dir=self.test_dir)
+        output_path = self.test_dir / "powerbi_export_latest.csv"
+        self.assertFalse(output_path.exists())
 
 if __name__ == "__main__":
     unittest.main()
