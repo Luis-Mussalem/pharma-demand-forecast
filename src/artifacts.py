@@ -936,6 +936,63 @@ def save_powerbi_export(
 
     logger.info(f"Power BI flat export saved at {output_path}")
 
+def save_powerbi_benchmark_export(
+    artifacts_dir: Path,
+) -> None:
+    """
+    Save flat CSV export of benchmark history for Power BI trend consumption.
+    Reads benchmark_history.csv and produces a renamed, BI-friendly version
+    with explicit column names and parsed boolean promotion flag.
+    Skips silently if benchmark_history.csv does not exist or is empty.
+    """
+
+    logger.info("Saving Power BI benchmark history export artifact.")
+
+    artifacts_dir.mkdir(parents=True, exist_ok=True)
+
+    source_path = artifacts_dir / "benchmark_history.csv"
+    output_path = artifacts_dir / "powerbi_benchmark_export_latest.csv"
+
+    if not source_path.exists():
+        logger.warning("benchmark_history.csv not found. Skipping Power BI benchmark export.")
+        return
+
+    try:
+        df = pd.read_csv(source_path)
+    except pd.errors.EmptyDataError:
+        logger.warning("benchmark_history.csv is empty. Skipping Power BI benchmark export.")
+        return
+
+    if df.empty or "timestamp" not in df.columns:
+        logger.warning("benchmark_history.csv has no usable rows. Skipping Power BI benchmark export.")
+        return
+
+    required_columns = {"timestamp", "model", "MAE", "RMSE"}
+    if not required_columns.issubset(df.columns):
+        logger.warning("benchmark_history.csv missing required columns. Skipping Power BI benchmark export.")
+        return
+
+    export = pd.DataFrame()
+    export["run_timestamp"] = df["timestamp"]
+    export["model_name"] = df.get("model")
+    export["features_used"] = df.get("features_used")
+    export["train_rows"] = df.get("train_rows")
+    export["validation_rows"] = df.get("validation_rows")
+    export["mae"] = df.get("MAE")
+    export["rmse"] = df.get("RMSE")
+    export["promoted"] = df.get("promoted_to_champion")
+    export["promotion_reason_code"] = df.get("promotion_reason_code")
+    export["champion_before"] = df.get("champion_before")
+    export["champion_after"] = df.get("champion_after")
+    export["challenger_mae"] = df.get("challenger_metric_value")
+    export["champion_mae_at_decision"] = df.get("champion_metric_value")
+    export["absolute_improvement"] = df.get("absolute_improvement")
+    export["relative_improvement"] = df.get("relative_improvement")
+
+    export.to_csv(output_path, index=False)
+
+    logger.info(f"Power BI benchmark history export saved at {output_path}")
+
 def load_champion_metrics(registry: dict) -> dict | None:
     """
     Load metrics artifact associated with the current champion model.
