@@ -320,6 +320,8 @@ Detailed technical decisions, trade-offs and architectural evolution are documen
 - Dashboard-friendly governance panel snapshot persisted: artifacts/governance_panel_latest.json
 - Governance alerts support configurable thresholds via runtime config
 - Regression tests cover promotion, drift, model governance, panel snapshot, and configurable alert threshold
+- Flat CSV export for Power BI consumption persisted: artifacts/powerbi_export_latest.csv
+- Power BI semantic contract defined: powerbi/governance_panel_contract.md
 
 ### Verification (recommended)
 
@@ -335,7 +337,7 @@ Detailed technical decisions, trade-offs and architectural evolution are documen
 
 Next stages of the project include:
 
-- dashboard integration over governance_panel_latest.json
+- Power BI dashboard visuals over powerbi_export_latest.csv (governance panel ready)
 - store-level drift segmentation and monitoring
 - alert thresholds by feature family with policy profiles
 - unified observability layer for promotion and drift lifecycle trends
