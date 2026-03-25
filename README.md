@@ -322,6 +322,8 @@ Detailed technical decisions, trade-offs and architectural evolution are documen
 - Regression tests cover promotion, drift, model governance, panel snapshot, and configurable alert threshold
 - Flat CSV export for Power BI consumption persisted: artifacts/powerbi_export_latest.csv
 - Power BI semantic contract defined: powerbi/governance_panel_contract.md
+- Flat benchmark history export for Power BI trend consumption persisted: artifacts/powerbi_benchmark_export_latest.csv
+- Benchmark history semantic contract defined: powerbi/benchmark_history_contract.md
 
 ### Verification (recommended)
 
@@ -337,7 +339,7 @@ Detailed technical decisions, trade-offs and architectural evolution are documen
 
 Next stages of the project include:
 
-- Power BI dashboard visuals over powerbi_export_latest.csv (governance panel ready)
+- Power BI dashboard visuals over powerbi_export_latest.csv and powerbi_benchmark_export_latest.csv (snapshot + trend ready)
 - store-level drift segmentation and monitoring
 - alert thresholds by feature family with policy profiles
 - unified observability layer for promotion and drift lifecycle trends
