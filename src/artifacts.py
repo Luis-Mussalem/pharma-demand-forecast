@@ -882,6 +882,60 @@ def save_governance_panel_snapshot(
 
     logger.info(f"Governance panel snapshot saved at {output_path}")
 
+def save_powerbi_export(
+    artifacts_dir: Path,
+) -> None:
+    """
+    Save flat CSV export of governance panel for Power BI consumption.
+    Reads governance_panel_latest.json and flattens all nested fields
+    into a single-row CSV consumable directly by Power BI as a table.
+    """
+
+    logger.info("Saving Power BI flat export artifact.")
+
+    artifacts_dir.mkdir(parents=True, exist_ok=True)
+
+    panel_path = artifacts_dir / "governance_panel_latest.json"
+    output_path = artifacts_dir / "powerbi_export_latest.csv"
+
+    if not panel_path.exists():
+        logger.warning("governance_panel_latest.json not found. Skipping Power BI export.")
+        return
+
+    with open(panel_path, "r") as file:
+        panel = json.load(file)
+
+    decision = panel.get("promotion_latest_decision") or {}
+    metrics = panel.get("champion_metrics") or {}
+    consistency = panel.get("consistency_checks") or {}
+    drifted_features = panel.get("drifted_features") or []
+
+    row = {
+        "generated_at": panel.get("generated_at"),
+        "champion_model": panel.get("champion_model"),
+        "champion_mae": metrics.get("MAE"),
+        "champion_rmse": metrics.get("RMSE"),
+        "promotion_status": panel.get("promotion_status"),
+        "promotion_reason_code": decision.get("reason_code"),
+        "promotion_promoted": decision.get("promoted"),
+        "promotion_challenger_mae": decision.get("challenger_metric_value"),
+        "promotion_champion_before": decision.get("champion_before"),
+        "promotion_champion_after": decision.get("champion_after"),
+        "drift_status": panel.get("drift_status"),
+        "drift_detected": panel.get("drift_detected"),
+        "drifted_features_count": len(drifted_features),
+        "consistency_promotion_aligned": consistency.get("promotion_aligned_to_registry"),
+        "consistency_drift_aligned": consistency.get("drift_aligned_to_registry"),
+        "alerts_total": panel.get("alerts_total", 0),
+        "alerts_critical": panel.get("alerts_critical", 0),
+        "alerts_warn": panel.get("alerts_warn", 0),
+        "alerts_info": panel.get("alerts_info", 0),
+    }
+
+    pd.DataFrame([row]).to_csv(output_path, index=False)
+
+    logger.info(f"Power BI flat export saved at {output_path}")
+
 def load_champion_metrics(registry: dict) -> dict | None:
     """
     Load metrics artifact associated with the current champion model.
