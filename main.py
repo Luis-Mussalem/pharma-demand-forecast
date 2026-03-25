@@ -27,6 +27,7 @@ from src.artifacts import (
     save_governance_summary,
     save_governance_alerts,
     save_governance_panel_snapshot,
+    save_powerbi_export,
     generate_timestamp,
     update_benchmark_history,
     update_champion_model,
@@ -272,6 +273,10 @@ def main():
         )
 
         save_governance_panel_snapshot(
+            artifacts_dir=artifacts_dir,
+        )
+
+        save_powerbi_export(
             artifacts_dir=artifacts_dir,
         )
 
