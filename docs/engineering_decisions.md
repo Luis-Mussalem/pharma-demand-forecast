@@ -1593,3 +1593,59 @@ The flat CSV export separates the internal pipeline governance representation (n
 
 Day 17 closed with flat export contract and Power BI semantic document ready for dashboard connection.
 Suggested tag: day17-powerbi-export-contract-ready
+
+---
+
+## Day 18 — Benchmark History Power BI Export Hardening
+
+### What
+
+Completed observability trend consumption by:
+- adding stable benchmark history Power BI export typing
+- adding analytical datetime field for trend visuals
+- defining benchmark history semantic contract for BI
+
+### Why
+
+After Day 17, Power BI snapshot consumption was governed, but trend consumption still depended on a technical export without a dedicated semantic contract and with potential BI typing ambiguity.
+
+Day 18 stabilized benchmark export semantics for direct dashboard trend usage.
+
+### Implementation
+
+- Hardened benchmark export in src/artifacts.py:
+  - added run_datetime parsed from timestamp
+  - normalized promoted to stable boolean behavior
+  - kept benchmark export ownership in artifacts layer
+- Extended regression coverage in tests/test_promotion_policy.py:
+  - run_datetime expectation
+  - promoted default behavior for historical non-audited runs
+- Created benchmark contract in powerbi/benchmark_history_contract.md:
+  - schema, semantic rules, BI mapping, and refresh data quality checks
+
+### Engineering Insight
+
+This step closes the observability cycle with two governed BI surfaces:
+- snapshot state contract (governance panel)
+- historical trend contract (benchmark history)
+
+This reduces Power BI-side transformation logic and enforces stable analytical semantics at the producer boundary.
+
+### Verification
+
+- python -m unittest discover -s tests -p "test_promotion_policy.py" -v → 34 tests OK
+- python main.py --config config/pipeline_config.yaml → completed successfully
+- artifacts/powerbi_benchmark_export_latest.csv regenerated with run_datetime and stable promoted semantics
+- grep -n "run_datetime\|promoted\|BenchmarkHistory" powerbi/benchmark_history_contract.md → expected anchors found
+
+### Remaining TODOs / Next Step
+
+- Build Power BI visuals using:
+  - artifacts/powerbi_export_latest.csv for latest governance status
+  - artifacts/powerbi_benchmark_export_latest.csv for performance trend and promotion timeline
+- Start dashboard layout and KPI cards for observability panel
+
+### Closure Note
+
+Day 18 documentation closed with benchmark trend contract and stable BI-ready historical export.
+Suggested tag: day18-observability-trend-contract-ready
