@@ -1064,6 +1064,7 @@ does this violate an existing ownership boundary?
 does this hide a runtime assumption already documented?
 
 Historical Error 14 — Power BI pt-BR Locale Numeric Parsing
+
 Error Observed
 
 Numeric columns like mae (508.3677) appeared as 5.08E+15 in Power BI after import.
@@ -1092,6 +1093,7 @@ Always use Advanced Editor with full let...in block and explicit "en-US" locale 
 ---
 
 Historical Error 15 — type logical Silent Row Exclusion on Load
+
 Error Observed
 
 promoted column cast to type logical in Power Query showed correct values ("False") in preview but caused COUNTROWS(BenchmarkHistory) to return BLANK in DAX after Close & Apply.
@@ -1116,6 +1118,7 @@ Never cast Python-serialized boolean columns to type logical in Power Query. Kee
 ---
 
 Historical Error 16 — COUNTROWS of Empty Filtered Set Returns BLANK
+
 Error Observed
 
 CALCULATE(COUNTROWS(BenchmarkHistory), filter_condition) returned BLANK when no rows matched the filter. DIVIDE(BLANK, 26, 0) also returned BLANK — not 0.
@@ -1143,6 +1146,7 @@ Use SUMX(..., IF(..., 1, 0)) for all conditional row counts in DAX. Never rely o
 ---
 
 Historical Error 17 — Multiple DAX Measures Written in Single Formula Editor
+
 Error Observed
 
 "The syntax for 'Audited' is incorrect" after pasting multiple measure definitions into one formula bar.
@@ -1166,6 +1170,7 @@ Never paste multiple DAX measure definitions into a single formula bar. Always e
 ---
 
 Historical Error 18 — Cross-Table Filter Context Causing BLANK on Independent Tables
+
 Error Observed
 
 Rows Benchmark = COUNTROWS(BenchmarkHistory) returned BLANK inside a Card visual even though data existed in the table.
@@ -1187,3 +1192,4 @@ In Power BI, independent governance tables must have no relationships between th
 Anti-Regression Rule
 
 Never create relationships between GovernancePanelLatest and BenchmarkHistory. Use ALL() wrapper on measures that must ignore filter context from other tables.
+
