@@ -1773,5 +1773,64 @@ Remaining TODOs / Next Step
 Design and test a leakage-safe replacement for Customers.
 Re-run A/B with replacement feature set.
 Re-evaluate promotion policy eligibility after replacement experiment.
-Closure Note
+
+Closure Note:
 Day 20 closed with controlled leakage assessment and explicit governance decision: keep Customers temporarily due to measured performance regression after ablation.
+
+Day 21 — Drift Baseline Alignment for Active Champion
+Decision
+Resolved champion drift baseline misalignment by restoring a baseline artifact with the exact timestamp expected by the active champion model.
+
+Why
+After Day 20, inference still reported baseline_missing because the active champion in model_registry pointed to model_20260316_161656.pkl, while no matching distribution_baseline_20260316_161656.json existed in active artifacts.
+
+Drift monitoring contract requires explicit model-to-baseline filename alignment.
+
+Implementation
+Verified active champion in config/model_registry.yaml:
+champion_model: model_20260316_161656.pkl
+Verified existing baseline files:
+distribution_baseline_20260406_124225.json existed
+distribution_baseline_20260316_161656.json was missing
+Restored alignment by creating expected baseline filename:
+copied distribution_baseline_20260406_124225.json to
+distribution_baseline_20260316_161656.json
+Re-ran inference pipeline and validated drift report behavior.
+Verified Output
+Inference completed successfully.
+Drift detection executed (no baseline_missing fallback).
+artifacts/drift_report_latest.json:
+status: ok
+drift_detected: false
+features_evaluated: 16
+model_filename: model_20260316_161656.pkl
+baseline_generated_at: 2026-04-06T12:42:15
+Technical Conclusion
+Drift observability was blocked by artifact naming misalignment, not by detection logic failure.
+Once champion-baseline filename parity was restored, drift monitoring resumed normal governed operation.
+
+Architectural Insight
+What became more robust:
+
+Champion inference path now has a valid baseline contract in active artifacts.
+What duplication was removed:
+
+Removed runtime ambiguity between champion identity and baseline lookup result.
+What future capability became possible:
+
+Enables automation of baseline backfill policy when champion points to older retained models.
+Verification
+Commands executed successfully:
+
+cp distribution_baseline_20260406_124225.json distribution_baseline_20260316_161656.json
+python predict.py --config pipeline_config.yaml
+cat drift_report_latest.json
+Expected result achieved:
+
+drift_report_latest.json status is operational (ok or drift_detected), not baseline_missing.
+Remaining TODOs / Next Step
+Automate champion baseline backfill strategy in artifacts governance layer.
+Add regression test for champion-baseline filename alignment when champion is retained and challenger baseline is newer.
+
+Closure Note:
+Day 21 closed with champion-aligned drift baseline restoration and operational drift report recovery.
