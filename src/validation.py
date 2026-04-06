@@ -1,8 +1,6 @@
 import pandas as pd
-from pandas.api.types import (
-    is_dtype_equal,
-    is_categorical_dtype,
-)
+from pandas.api.types import is_dtype_equal
+from pandas import CategoricalDtype
 from src.logger import get_logger
 from pathlib import Path
 from src.config_loader import load_schema_version
@@ -49,7 +47,7 @@ def validate_dtypes(df: pd.DataFrame) -> None:
 
         # Special handling for categorical
         if expected_dtype == "category":
-            if not is_categorical_dtype(df[column]):
+            if not isinstance(df[column].dtype, CategoricalDtype):
                 raise TypeError(
                     f"Column '{column}' must be categorical."
                 )
