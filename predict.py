@@ -3,8 +3,6 @@ import argparse
 from pathlib import Path
 from datetime import datetime
 
-from traitlets import config
-
 from src.ingestion import load_data
 from src.config_loader import load_config
 from src.inference import get_latest_model_path, load_model, run_inference
