@@ -1715,3 +1715,63 @@ The Power BI layer exposed three independent failure modes (locale, type system,
 ### Closure Note
 
 Day 19 closed. Power BI governance dashboard complete with 4-level layout: executive snapshot, operational governance, trend charts, and benchmark audit log. Five Power BI-specific error classes resolved and documented in AGENTS.md Section 3 (Historical Errors 14–18).
+
+Day 20 — Customers Leakage Assessment and Governance Decision
+Decision
+Executed a controlled A/B ablation to evaluate whether removing Customers improves production realism without unacceptable performance regression.
+
+Why
+By Day 19, the pipeline was architecturally complete, but Customers remained a potential leakage risk for prospective forecasting use-cases.
+
+Before changing production contracts, we needed evidence-based validation of impact on MAE and RMSE.
+
+Implementation
+Kept production pipeline unchanged.
+Ran controlled experiment with identical split, features, and model:
+Scenario A: with Customers
+Scenario B: without Customers
+Compared performance deltas directly on validation set.
+Verified Output (A/B Experiment)
+A_with_customers_MAE: 508.367764
+A_with_customers_RMSE: 779.234028
+B_without_customers_MAE: 569.901549
+B_without_customers_RMSE: 879.770080
+Delta_MAE_B_minus_A: +61.533785
+Delta_RMSE_B_minus_A: +100.536052
+Technical Conclusion
+Removing Customers at this stage causes severe degradation in both central error (MAE) and tail error (RMSE).
+
+Decision for Day 20:
+
+Keep Customers in the current production baseline.
+Do not remove feature without a replacement strategy.
+Treat this as a governed trade-off between realism and predictive stability.
+Architectural Insight
+This step improved governance quality by making model-policy decisions evidence-driven instead of assumption-driven.
+
+What became more robust:
+
+Feature removal now requires measured impact and explicit acceptance criteria.
+What duplication was removed:
+
+Eliminated implicit reasoning split between leakage concern and performance concern by unifying both in one A/B decision gate.
+What future capability became possible:
+
+Enables next iteration focused on leakage-safe proxy design (for example, historical customer signal) before revisiting feature removal.
+Verification
+Commands executed successfully:
+
+python -m unittest discover -s tests -p "test_model_governance.py" -v
+python -m unittest discover -s tests -p "test_promotion_policy.py" -v
+python -m unittest discover -s tests -p "test_drift_monitoring.py" -v
+python main.py --config pipeline_config.yaml
+python predict.py --config pipeline_config.yaml
+python - <<'PY' ... A/B ablation script ... PY
+All test suites returned OK and both train/inference pipelines completed successfully.
+
+Remaining TODOs / Next Step
+Design and test a leakage-safe replacement for Customers.
+Re-run A/B with replacement feature set.
+Re-evaluate promotion policy eligibility after replacement experiment.
+Closure Note
+Day 20 closed with controlled leakage assessment and explicit governance decision: keep Customers temporarily due to measured performance regression after ablation.
