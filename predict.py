@@ -115,6 +115,9 @@ def main():
         critical_drift_feature_threshold=int(
         governance_alerts_config.get("critical_drift_feature_threshold", 5)
     ),
+        recurrent_baseline_backfill_threshold=int(
+        governance_alerts_config.get("recurrent_baseline_backfill_threshold", 3)
+    ),
     )
 
     save_governance_panel_snapshot(

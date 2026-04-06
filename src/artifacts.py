@@ -641,6 +641,15 @@ def save_governance_summary(
             "drifted_features": []
             if drift_report is None
             else drift_report.get("drifted_features", []),
+            "baseline_resolution_source": None
+            if drift_report is None
+            else drift_report.get("baseline_resolution_source"),
+            "baseline_expected_filename": None
+            if drift_report is None
+            else drift_report.get("baseline_expected_filename"),
+            "baseline_resolved_filename": None
+            if drift_report is None
+            else drift_report.get("baseline_resolved_filename"),
         },
         "latest_benchmark": latest_benchmark,
         "consistency_checks": {
@@ -658,10 +667,12 @@ def save_governance_summary(
 
     logger.info(f"Governance observability summary saved at {output_path}")
 
+
 def save_governance_alerts(
     artifacts_dir: Path,
     consecutive_rejection_threshold: int = 3,
     critical_drift_feature_threshold: int = 5,
+    recurrent_baseline_backfill_threshold: int = 3,
 ) -> None:
     """
     Save governance alerts derived from unified observability summary.
@@ -714,6 +725,7 @@ def save_governance_alerts(
     drift_status = drift.get("report_status")
     drift_detected = drift.get("drift_detected")
     drifted_features = drift.get("drifted_features", [])
+    baseline_resolution_source = drift.get("baseline_resolution_source")
 
     if promotion_status == "promotion_report_missing":
         alerts.append(
@@ -746,6 +758,45 @@ def save_governance_alerts(
                 },
             }
         )
+
+    if isinstance(baseline_resolution_source, str) and baseline_resolution_source.startswith("backfill_from"):
+        backfill_streak = 1
+        archive_metrics_dir = Path("archive") / "metrics"
+
+        if archive_metrics_dir.exists():
+            archived_reports = sorted(
+                archive_metrics_dir.glob("drift_report_*.json"),
+                reverse=True,
+            )
+
+            for report_path in archived_reports:
+                try:
+                    with open(report_path, "r") as file:
+                        archived_report = json.load(file)
+                except (json.JSONDecodeError, OSError):
+                    continue
+
+                archived_source = archived_report.get("baseline_resolution_source")
+                if isinstance(archived_source, str) and archived_source.startswith("backfill_from"):
+                    backfill_streak += 1
+                else:
+                    break
+
+        if backfill_streak >= recurrent_baseline_backfill_threshold:
+            alerts.append(
+                {
+                    "code": "BASELINE_BACKFILL_RECURRENT",
+                    "severity": "warn",
+                    "message": "Baseline resolution is repeatedly relying on backfill.",
+                    "details": {
+                        "consecutive_backfill_count": backfill_streak,
+                        "threshold": recurrent_baseline_backfill_threshold,
+                        "latest_resolution_source": baseline_resolution_source,
+                        "expected_baseline_filename": drift.get("baseline_expected_filename"),
+                        "resolved_baseline_filename": drift.get("baseline_resolved_filename"),
+                    },
+                }
+            )
 
     if drift_detected is True:
         drifted_count = len(drifted_features)
@@ -831,6 +882,7 @@ def save_governance_alerts(
 
     logger.info(f"Governance alerts saved at {output_path}")
 
+
 def save_governance_panel_snapshot(
     artifacts_dir: Path,
 ) -> None:
@@ -870,6 +922,9 @@ def save_governance_panel_snapshot(
         "drift_status": summary.get("drift", {}).get("report_status"),
         "drift_detected": summary.get("drift", {}).get("drift_detected"),
         "drifted_features": summary.get("drift", {}).get("drifted_features", []),
+        "drift_baseline_resolution_source": summary.get("drift", {}).get("baseline_resolution_source"),
+        "drift_baseline_expected_filename": summary.get("drift", {}).get("baseline_expected_filename"),
+        "drift_baseline_resolved_filename": summary.get("drift", {}).get("baseline_resolved_filename"),
         "consistency_checks": summary.get("consistency_checks"),
         "alerts_total": alerts.get("total_alerts", 0),
         "alerts_critical": alerts.get("critical_alerts", 0),
@@ -881,6 +936,7 @@ def save_governance_panel_snapshot(
         json.dump(payload, file, indent=4)
 
     logger.info(f"Governance panel snapshot saved at {output_path}")
+
 
 def save_powerbi_export(
     artifacts_dir: Path,
@@ -924,6 +980,9 @@ def save_powerbi_export(
         "drift_status": panel.get("drift_status"),
         "drift_detected": panel.get("drift_detected"),
         "drifted_features_count": len(drifted_features),
+        "drift_baseline_resolution_source": panel.get("drift_baseline_resolution_source"),
+        "drift_baseline_expected_filename": panel.get("drift_baseline_expected_filename"),
+        "drift_baseline_resolved_filename": panel.get("drift_baseline_resolved_filename"),
         "consistency_promotion_aligned": consistency.get("promotion_aligned_to_registry"),
         "consistency_drift_aligned": consistency.get("drift_aligned_to_registry"),
         "alerts_total": panel.get("alerts_total", 0),

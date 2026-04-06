@@ -29,3 +29,4 @@ governance:
   alerts:
     consecutive_rejection_threshold: 3
     critical_drift_feature_threshold: 5
+    recurrent_baseline_backfill_threshold: 3

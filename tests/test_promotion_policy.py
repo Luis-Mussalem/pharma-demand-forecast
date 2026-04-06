@@ -630,6 +630,51 @@ class TestGovernanceAlerts(unittest.TestCase):
         self.assertIn("DRIFT_BASELINE_MISSING", codes)
         self.assertEqual(payload["warn_alerts"], 1)
 
+    def test_triggers_recurrent_baseline_backfill_alert(self):
+        summary = {
+            "promotion": {
+                "report_status": "ok",
+                "latest_decision": {
+                    "champion_after": "model_20260316_161656.pkl",
+                },
+            },
+            "drift": {
+                "report_status": "ok",
+                "drift_detected": False,
+                "model_filename": "model_20260316_161656.pkl",
+                "drifted_features": [],
+                "baseline_resolution_source": "backfill_from_archive",
+                "baseline_expected_filename": "distribution_baseline_20260316_161656.json",
+                "baseline_resolved_filename": "distribution_baseline_20260319_183955.json",
+            },
+            "consistency_checks": {
+                "promotion_aligned_to_registry": True,
+                "drift_aligned_to_registry": True,
+            },
+        }
+
+        (self.repo_root / "artifacts" / "governance_summary_latest.json").write_text(
+            json.dumps(summary)
+        )
+
+        archive_metrics = self.repo_root / "archive" / "metrics"
+        archive_metrics.mkdir(parents=True, exist_ok=True)
+
+        (archive_metrics / "drift_report_20260321_090000.json").write_text(
+            json.dumps({"baseline_resolution_source": "backfill_from_archive"})
+        )
+
+        save_governance_alerts(
+            self.repo_root / "artifacts",
+            recurrent_baseline_backfill_threshold=2,
+        )
+
+        output_path = self.repo_root / "artifacts" / "governance_alerts_latest.json"
+        payload = json.loads(output_path.read_text())
+
+        codes = {alert["code"] for alert in payload["alerts"]}
+        self.assertIn("BASELINE_BACKFILL_RECURRENT", codes)
+
     def test_flags_critical_mismatch_when_registry_alignment_fails(self):
         summary = {
             "promotion": {
@@ -771,6 +816,9 @@ class TestGovernancePanelSnapshot(unittest.TestCase):
                 "report_status": "ok",
                 "drift_detected": False,
                 "drifted_features": [],
+                "baseline_resolution_source": "backfill_from_archive",
+                "baseline_expected_filename": "distribution_baseline_20260316_161656.json",
+                "baseline_resolved_filename": "distribution_baseline_20260319_183955.json",
             },
             "consistency_checks": {
                 "promotion_aligned_to_registry": True,
@@ -805,6 +853,15 @@ class TestGovernancePanelSnapshot(unittest.TestCase):
         self.assertEqual(payload["alerts_warn"], 1)
         self.assertEqual(payload["alerts_critical"], 0)
         self.assertEqual(payload["alerts_info"], 0)
+        self.assertEqual(payload["drift_baseline_resolution_source"], "backfill_from_archive")
+        self.assertEqual(
+            payload["drift_baseline_expected_filename"],
+            "distribution_baseline_20260316_161656.json",
+        )
+        self.assertEqual(
+            payload["drift_baseline_resolved_filename"],
+            "distribution_baseline_20260319_183955.json",
+        )
 
 class TestPowerBIExport(unittest.TestCase):
     def setUp(self):
@@ -829,6 +886,9 @@ class TestPowerBIExport(unittest.TestCase):
             "drift_status": "ok",
             "drift_detected": False,
             "drifted_features": [],
+            "drift_baseline_resolution_source": "backfill_from_archive",
+            "drift_baseline_expected_filename": "distribution_baseline_20260316_161656.json",
+            "drift_baseline_resolved_filename": "distribution_baseline_20260319_183955.json",
             "consistency_checks": {
                 "promotion_aligned_to_registry": True,
                 "drift_aligned_to_registry": True,
@@ -853,9 +913,11 @@ class TestPowerBIExport(unittest.TestCase):
         self.assertIn("champion_mae", df.columns)
         self.assertIn("promotion_reason_code", df.columns)
         self.assertIn("drifted_features_count", df.columns)
+        self.assertIn("drift_baseline_resolution_source", df.columns)
         self.assertIn("alerts_total", df.columns)
         self.assertEqual(df["champion_mae"].iloc[0], 500.0)
         self.assertEqual(df["drifted_features_count"].iloc[0], 0)
+        self.assertEqual(df["drift_baseline_resolution_source"].iloc[0], "backfill_from_archive")
 
     def test_skips_export_when_panel_missing(self):
         save_powerbi_export(artifacts_dir=self.test_dir)
