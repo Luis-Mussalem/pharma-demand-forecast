@@ -63,13 +63,13 @@ def load_model(model_path: str = None):
 
     return model
 
-def build_inference_context(future_df: pd.DataFrame, history_window: int) -> pd.DataFrame:
+def build_inference_context(future_df: pd.DataFrame, history_window: int, history_path: str = "data/raw/train.csv") -> pd.DataFrame:
     """
-    Concatenate recent historiccal observations to support lag fearture generation.
+    Concatenate recent historical observations to support lag feature generation.
     """
 
     history = pd.read_csv(
-        "data/raw/train.csv",
+        history_path,
         parse_dates=["Date"],
         dtype={"StateHoliday": str},
     )
@@ -88,25 +88,27 @@ def build_inference_context(future_df: pd.DataFrame, history_window: int) -> pd.
 
     return combined
 
-def prepare_inference_data(df: pd.DataFrame) -> pd.DataFrame:
+def prepare_inference_data(df: pd.DataFrame, config: dict = None) -> pd.DataFrame:
     """
     Prepare inference feature matrix using training-compatible preprocessing.
     """
 
     logger.info("Preparing inference dataset.")
 
-    config = load_config(Path("config/pipeline_config.yaml"))
+    if config is None:
+        config = load_config(Path("config/pipeline_config.yaml"))
 
     df = validate_inference_schema(df)
 
     future_size = len(df)
-    
-    history_window = config["inference"]   ["history_window_days"]
 
-    df = build_inference_context(df, history_window)
-    
-    feature_config = config["features"] 
-    
+    history_window = config["inference"]["history_window_days"]
+
+    history_path = config["data"]["raw_data_path"]
+    df = build_inference_context(df, history_window, history_path=history_path)
+
+    feature_config = config["features"]
+
     df = run_feature_pipeline(df, feature_config)
 
     df = df.tail(future_size)
