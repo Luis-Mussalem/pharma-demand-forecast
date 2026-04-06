@@ -1064,24 +1064,32 @@ def load_distribution_baseline_for_model(model_filename: str) -> dict | None:
     archive_metrics_dir = Path("archive") / "metrics"
 
     expected_path = artifacts_dir / baseline_filename
+
     candidate_paths = [
-        expected_path,
-        archive_metrics_dir / baseline_filename,
+        ("exact_active", expected_path),
+        ("exact_archive", archive_metrics_dir / baseline_filename),
     ]
 
-    for baseline_path in candidate_paths:
+    for source, baseline_path in candidate_paths:
         if baseline_path.exists():
             with open(baseline_path, "r") as file:
-                return json.load(file)
+                baseline = json.load(file)
+
+            baseline["baseline_resolution_source"] = source
+            baseline["baseline_expected_filename"] = baseline_filename
+            baseline["baseline_resolved_filename"] = baseline_path.name
+            return baseline
 
     # Backfill policy: use latest available baseline and materialize
     # expected filename in active artifacts for champion-aligned lookup.
     fallback_candidates = sorted(artifacts_dir.glob("distribution_baseline_*.json"))
+    fallback_source = "backfill_from_active"
 
     if not fallback_candidates:
         fallback_candidates = sorted(
             archive_metrics_dir.glob("distribution_baseline_*.json")
         )
+        fallback_source = "backfill_from_archive"
 
     if fallback_candidates:
         source_path = fallback_candidates[-1]
@@ -1097,7 +1105,12 @@ def load_distribution_baseline_for_model(model_filename: str) -> dict | None:
         )
 
         with open(expected_path, "r") as file:
-            return json.load(file)
+            baseline = json.load(file)
+
+        baseline["baseline_resolution_source"] = fallback_source
+        baseline["baseline_expected_filename"] = baseline_filename
+        baseline["baseline_resolved_filename"] = source_path.name
+        return baseline
 
     logger.info(
         "Distribution baseline file not found in active or archive folders: %s",

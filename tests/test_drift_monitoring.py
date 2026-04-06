@@ -116,6 +116,15 @@ class TestDistributionBaselineArtifacts(unittest.TestCase):
         loaded = load_distribution_baseline_for_model("model_20260319_100000.pkl")
 
         self.assertEqual(loaded["feature_stats"]["Promo"]["mean"], 0.5)
+        self.assertEqual(loaded["baseline_resolution_source"], "exact_active")
+        self.assertEqual(
+            loaded["baseline_expected_filename"],
+            "distribution_baseline_20260319_100000.json",
+        )
+        self.assertEqual(
+            loaded["baseline_resolved_filename"],
+            "distribution_baseline_20260319_100000.json",
+        )
 
     def test_backfills_missing_champion_baseline_from_latest_available(self):
         expected_name = "distribution_baseline_20260316_161656.json"
@@ -148,6 +157,15 @@ class TestDistributionBaselineArtifacts(unittest.TestCase):
         self.assertIsNotNone(loaded)
         self.assertTrue((self.repo_root / "artifacts" / expected_name).exists())
         self.assertEqual(loaded["generated_at"], "2026-04-06T12:42:15")
+        self.assertEqual(loaded["baseline_resolution_source"], "backfill_from_active")
+        self.assertEqual(
+            loaded["baseline_expected_filename"],
+            "distribution_baseline_20260316_161656.json",
+        )
+        self.assertEqual(
+            loaded["baseline_resolved_filename"],
+            "distribution_baseline_20260406_124225.json",
+        )
 
     def test_loads_distribution_baseline_from_archive_fallback(self):
         baseline_path = (
@@ -177,6 +195,15 @@ class TestDistributionBaselineArtifacts(unittest.TestCase):
         loaded = load_distribution_baseline_for_model("model_20260319_100000.pkl")
 
         self.assertEqual(loaded["feature_stats"]["Promo"]["max"], 1.0)
+        self.assertEqual(loaded["baseline_resolution_source"], "exact_archive")
+        self.assertEqual(
+        loaded["baseline_expected_filename"],
+            "distribution_baseline_20260319_100000.json",
+        )
+        self.assertEqual(
+            loaded["baseline_resolved_filename"],
+            "distribution_baseline_20260319_100000.json",
+        )
 
     def test_archive_preserves_champion_distribution_baseline(self):
         champion_model = "model_20260319_100000.pkl"

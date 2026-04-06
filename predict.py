@@ -68,6 +68,9 @@ def main():
             "features_evaluated": 0,
             "drifted_features": [],
             "feature_details": {},
+            "baseline_resolution_source": "missing",
+            "baseline_expected_filename": None,
+            "baseline_resolved_filename": None,
         }
     else:
         drift_report = detect_drift(
@@ -77,6 +80,9 @@ def main():
         )
         drift_report["model_filename"] = Path(model_path).name
         drift_report["baseline_generated_at"] = baseline.get("generated_at")
+        drift_report["baseline_resolution_source"] = baseline.get("baseline_resolution_source")
+        drift_report["baseline_expected_filename"] = baseline.get("baseline_expected_filename")
+        drift_report["baseline_resolved_filename"] = baseline.get("baseline_resolved_filename")
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
