@@ -81,23 +81,42 @@ def archive_previous_artifacts(skip_model: str | None = None):
 def archive_inference_artifacts():
     """
     Move previous inference artifacts before saving new inference output.
+    Archives prediction files to archive/predictions/ and drift reports to archive/metrics/.
     """
 
     logger.info("Archiving previous inference artifacts.")
 
     artifacts_dir = Path("artifacts")
-    archive_dir = Path("archive") / "predictions"
 
-    archive_dir.mkdir(parents=True, exist_ok=True)
+    predictions_archive = Path("archive") / "predictions"
+    predictions_archive.mkdir(parents=True, exist_ok=True)
+
+    metrics_archive = Path("archive") / "metrics"
+    metrics_archive.mkdir(parents=True, exist_ok=True)
 
     for file_path in artifacts_dir.iterdir():
 
         if file_path.name.startswith("inference_predictions_"):
-
             shutil.move(
                 str(file_path),
-                str(archive_dir / file_path.name)
+                str(predictions_archive / file_path.name)
             )
+
+    drift_report = artifacts_dir / "drift_report_latest.json"
+    if drift_report.exists():
+        try:
+            with open(drift_report, "r") as f:
+                report_data = json.load(f)
+            generated_at = report_data.get("generated_at", "")
+            ts = generated_at.replace("-", "").replace(":", "").replace("T", "_")[:15]
+        except (json.JSONDecodeError, OSError):
+            ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+        archive_name = f"drift_report_{ts}.json"
+        shutil.copy2(
+            str(drift_report),
+            str(metrics_archive / archive_name)
+        )
 
     logger.info("Previous inference artifacts archived successfully.")
 
