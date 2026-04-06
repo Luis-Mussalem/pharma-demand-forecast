@@ -117,6 +117,38 @@ class TestDistributionBaselineArtifacts(unittest.TestCase):
 
         self.assertEqual(loaded["feature_stats"]["Promo"]["mean"], 0.5)
 
+    def test_backfills_missing_champion_baseline_from_latest_available(self):
+        expected_name = "distribution_baseline_20260316_161656.json"
+
+        source_path = (
+            self.repo_root
+            / "artifacts"
+            / "distribution_baseline_20260406_124225.json"
+        )
+        source_path.write_text(
+            json.dumps(
+                {
+                    "generated_at": "2026-04-06T12:42:15",
+                    "features_evaluated": 1,
+                    "feature_stats": {
+                        "Promo": {
+                            "mean": 0.5,
+                            "std": 0.5,
+                            "min": 0.0,
+                            "max": 1.0,
+                            "observations": 4,
+                        }
+                    },
+                }
+            )
+        )
+
+        loaded = load_distribution_baseline_for_model("model_20260316_161656.pkl")
+
+        self.assertIsNotNone(loaded)
+        self.assertTrue((self.repo_root / "artifacts" / expected_name).exists())
+        self.assertEqual(loaded["generated_at"], "2026-04-06T12:42:15")
+
     def test_loads_distribution_baseline_from_archive_fallback(self):
         baseline_path = (
             self.repo_root

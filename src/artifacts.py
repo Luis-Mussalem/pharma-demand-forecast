@@ -1048,6 +1048,7 @@ def load_distribution_baseline_for_model(model_filename: str) -> dict | None:
     """
     Load distribution baseline artifact aligned to a specific model filename.
     Looks in active artifacts first, then archive fallback.
+    If exact baseline is missing, backfill from latest available baseline.
     """
 
     model_stem = Path(model_filename).stem
@@ -1059,15 +1060,44 @@ def load_distribution_baseline_for_model(model_filename: str) -> dict | None:
     timestamp = model_stem[len("model_"):]
     baseline_filename = f"distribution_baseline_{timestamp}.json"
 
+    artifacts_dir = Path("artifacts")
+    archive_metrics_dir = Path("archive") / "metrics"
+
+    expected_path = artifacts_dir / baseline_filename
     candidate_paths = [
-        Path("artifacts") / baseline_filename,
-        Path("archive") / "metrics" / baseline_filename,
+        expected_path,
+        archive_metrics_dir / baseline_filename,
     ]
 
     for baseline_path in candidate_paths:
         if baseline_path.exists():
             with open(baseline_path, "r") as file:
                 return json.load(file)
+
+    # Backfill policy: use latest available baseline and materialize
+    # expected filename in active artifacts for champion-aligned lookup.
+    fallback_candidates = sorted(artifacts_dir.glob("distribution_baseline_*.json"))
+
+    if not fallback_candidates:
+        fallback_candidates = sorted(
+            archive_metrics_dir.glob("distribution_baseline_*.json")
+        )
+
+    if fallback_candidates:
+        source_path = fallback_candidates[-1]
+        artifacts_dir.mkdir(parents=True, exist_ok=True)
+
+        shutil.copy2(source_path, expected_path)
+
+        logger.info(
+            "Backfilled missing distribution baseline for model %s | source=%s | target=%s",
+            model_filename,
+            source_path.name,
+            expected_path.name,
+        )
+
+        with open(expected_path, "r") as file:
+            return json.load(file)
 
     logger.info(
         "Distribution baseline file not found in active or archive folders: %s",
