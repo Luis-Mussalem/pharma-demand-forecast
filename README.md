@@ -194,20 +194,20 @@ The pipeline follows a modular architecture designed to enforce data contracts, 
 
 Each module has a clearly defined responsibility:
 
-- [main.py](http://_vscodecontentref_/7) — CLI entry point and pipeline orchestration
+- main.py — CLI entry point and pipeline orchestration
 - config_loader.py — external configuration loader
 - ingestion.py — controlled dataset loading
 - validation.py — schema and granularity enforcement
 - schema_registry.py — explicit schema contracts for training and inference
 - inference_validation.py — isolated inference contract enforcement
 - splitting.py — deterministic temporal train-validation split
-- [processing.py](http://_vscodecontentref_/8) — feature engineering pipeline (calendar, lag, rolling features)
+- processing.py — feature engineering pipeline (calendar, lag, rolling features)
 - feature_registry.py — config-driven feature orchestration
-- [training.py](http://_vscodecontentref_/9) — modeling preparation and baseline fitting
+- training.py — modeling preparation and baseline fitting
 - evaluation.py — validation scoring and prediction generation
-- [drift.py](http://_vscodecontentref_/10) — distribution baseline computation and inference drift detection
-- [artifacts.py](http://_vscodecontentref_/11) — artifact lifecycle, promotion policy, explainable decision trace, benchmark persistence, drift artifacts
-- [predict.py](http://_vscodecontentref_/12) — isolated inference execution using registry-governed champion model
+- drift.py — distribution baseline computation and inference drift detection
+- artifacts.py — artifact lifecycle, promotion policy, explainable decision trace, benchmark persistence, drift artifacts
+- predict.py — isolated inference execution using registry-governed champion model
 
 ---
 
@@ -240,6 +240,10 @@ pharma-demand-forecast/
 │   ├── distribution_baseline_YYYYMMDD_HHMMSS.json
 │   ├── drift_report_latest.json
 │   ├── governance_summary_latest.json
+│   ├── governance_alerts_latest.json
+│   ├── governance_panel_latest.json
+│   ├── powerbi_export_latest.csv
+│   ├── powerbi_benchmark_export_latest.csv
 │   └── inference_predictions_YYYYMMDD_HHMMSS.csv
 │
 ├── config/
@@ -268,30 +272,32 @@ pharma-demand-forecast/
 │   └── exploration.ipynb
 │
 ├── powerbi/
+│   ├── governance_panel_contract.md
+│   ├── benchmark_history_contract.md
+│   └── pharma_governance_dashboard.pbix
 │
 ├── src/
 │   ├── __init__.py
-│   ├── [artifacts.py](http://_vscodecontentref_/15)
+│   ├── artifacts.py
 │   ├── config_loader.py
-│   ├── [drift.py](http://_vscodecontentref_/16)
+│   ├── drift.py
 │   ├── evaluation.py
 │   ├── feature_registry.py
 │   ├── importance.py
-│   ├── [inference.py](http://_vscodecontentref_/17)
+│   ├── inference.py
 │   ├── inference_validation.py
 │   ├── ingestion.py
 │   ├── logger.py
-│   ├── [processing.py](http://_vscodecontentref_/18)
+│   ├── processing.py
 │   ├── schema_registry.py
 │   ├── splitting.py
-│   ├── [training.py](http://_vscodecontentref_/19)
+│   ├── training.py
 │   └── validation.py
 │
 └── tests/
-└── tests/
-    ├── [test_drift_monitoring.py](http://_vscodecontentref_/21)
-    ├── [test_model_governance.py](http://_vscodecontentref_/22)
-    └── [test_promotion_policy.py](http://_vscodecontentref_/23)
+    ├── test_drift_monitoring.py
+    ├── test_model_governance.py
+    └── test_promotion_policy.py
 ```
 
 ---
@@ -315,6 +321,15 @@ Detailed technical decisions, trade-offs and architectural evolution are documen
 - Distribution baseline persisted per training run: artifacts/distribution_baseline_YYYYMMDD_HHMMSS.json
 - Inference drift report persisted as latest runtime signal: artifacts/drift_report_latest.json
 - Drift baseline lookup is aligned to the active model consumed in inference
+- Drift baseline resolution metadata persisted in drift report:
+  - baseline_resolution_source
+  - baseline_expected_filename
+  - baseline_resolved_filename
+- Baseline resolution paths supported:
+  - exact_active
+  - exact_archive
+  - backfill_from_active
+  - backfill_from_archive
 - Unified governance observability snapshot persisted: artifacts/governance_summary_latest.json
 - Governance alerts artifact persisted: artifacts/governance_alerts_latest.json
 - Dashboard-friendly governance panel snapshot persisted: artifacts/governance_panel_latest.json
@@ -330,8 +345,8 @@ Detailed technical decisions, trade-offs and architectural evolution are documen
 - python -m unittest discover -s tests -p "test_drift_monitoring.py" -v
 - python -m unittest discover -s tests -p "test_model_governance.py" -v
 - python -m unittest discover -s tests -p "test_promotion_policy.py" -v
-- python [main.py](http://_vscodecontentref_/30) --config [pipeline_config.yaml](http://_vscodecontentref_/31)
-- python [predict.py](http://_vscodecontentref_/32) --config [pipeline_config.yaml](http://_vscodecontentref_/33)
+- python main.py --config pipeline_config.yaml
+- python predict.py --config pipeline_config.yaml
 
 ---
 
@@ -354,17 +369,15 @@ https://github.com/Luis-Mussalem/pharma-demand-forecast
 
 Clone the repository and run the pipeline:
 
+```bash
 git clone https://github.com/Luis-Mussalem/pharma-demand-forecast.git
 cd pharma-demand-forecast
 python -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 
-Run training pipeline:
-python main.py --config config/pipeline_config.yaml
-
-Run inference pipeline:
-python predict.py --config config/pipeline_config.yaml
+python main.py --config pipeline_config.yaml
+python predict.py --config pipeline_config.yaml
 
 ---
 
