@@ -345,8 +345,8 @@ Detailed technical decisions, trade-offs and architectural evolution are documen
 - python -m unittest discover -s tests -p "test_drift_monitoring.py" -v
 - python -m unittest discover -s tests -p "test_model_governance.py" -v
 - python -m unittest discover -s tests -p "test_promotion_policy.py" -v
-- python main.py --config pipeline_config.yaml
-- python predict.py --config pipeline_config.yaml
+- python main.py --config config/pipeline_config.yaml
+- python predict.py --config config/pipeline_config.yaml
 
 ---
 
