@@ -1,363 +1,223 @@
-# Pharma Demand Forecast — Data Engineering Pipeline
+# Pharma Demand Forecast — Modular ML Pipeline & Governance Architecture
 
 ![Python](https://img.shields.io/badge/Python-3.12-blue)
-![Pipeline](https://img.shields.io/badge/Data%20Pipeline-Modular-green)
-![Architecture](https://img.shields.io/badge/Architecture-Data%20Engineering-orange)
+![scikit-learn](https://img.shields.io/badge/scikit--learn-1.8-orange)
+![Pipeline](https://img.shields.io/badge/Pipeline-Modular-green)
+![Architecture](https://img.shields.io/badge/Architecture-MLOps-purple)
 ![License](https://img.shields.io/badge/License-MIT-lightgrey)
 
-## Project Overview
+## What This Project Is
 
-This project implements a modular and reproducible machine learning pipeline for daily sales forecasting using the Rossmann Store Sales dataset.
+A production-oriented ML pipeline for daily sales forecasting across 1,115 retail pharmacy stores, built on the [Rossmann Store Sales](https://www.kaggle.com/c/rossmann-store-sales) dataset.
 
-The goal is not only predictive performance, but also production-oriented ML architecture with explicit ownership of responsibilities, fail-fast contracts, and governed artifact lifecycle.
+The focus is **not** predictive performance alone — it is the complete engineering system around a model:
 
-The pipeline enforces:
+- Explicit data contracts with fail-fast validation
+- Schema-versioned training and inference pipelines
+- Config-driven feature engineering with registry orchestration
+- Explainable champion model promotion with threshold-based governance
+- Non-blocking inference drift monitoring with baseline alignment
+- Governed artifact lifecycle with timestamped persistence and automatic archiving
+- Power BI consumption layer with semantic contracts
 
-- explicit data contracts
-- schema validation
-- temporal consistency
-- modular feature engineering
-- deterministic execution
-- artifact versioning
-- inference reproducibility
-- explainable model promotion governance
-
----
-
-## Architecture Highlights
-
-Main architectural principles:
-
-- YAML-driven execution
-- strict validation before transformations
-- schema contract versioning
-- explicit champion model governance
-- benchmark-aware promotion policy
-- explainable promotion decision trace
-- champion-aligned drift baseline and inference drift monitoring
-- temporal split before feature generation
-- modular feature registry
-- isolated training and inference pipelines
-- timestamped artifact persistence
-- automatic artifact archiving
-- config-driven runtime paths
-
-This architecture follows production-oriented ML pipeline patterns and separates data responsibilities across explicit pipeline layers.
+This project was deliberately designed as a **controlled architecture exercise** to demonstrate real ML pipeline engineering maturity.
 
 ---
 
-## Current Pipeline Scope
+## What Makes This Different
 
-### Data Layer
+Most portfolio ML projects are notebooks with `model.fit()`. This repository demonstrates:
 
-- Controlled ingestion with explicit dtype handling
-- Schema and granularity validation (`Store + Date`)
-- Temporal split with leakage prevention
-
-### Feature Layer
-
-- Calendar features
-- Lag features
-- Rolling statistics
-- Promo signal activation through feature registry
-
-### Modeling Layer
-
-Supported models:
-
-- `RandomForestRegressor`
-- `HistGradientBoostingRegressor`
-
-Current best baseline:
-
-- `HistGradientBoostingRegressor`
-- MAE ≈ 508
-- RMSE ≈ 779
-
-### Evaluation Layer
-
-Generated artifacts:
-
-- metrics
-- validation predictions
-- top prediction errors
-- store-level error aggregation
-- feature importance
-- benchmark history
-- experiment summary with promotion audit
-
-### Inference Layer
-
-Dedicated prediction pipeline through predict.py:
-
-- registry-governed champion loading (explicit champion file or latest policy)
-- inference schema validation
-- historical context reconstruction
-- config-driven inference input
-- prediction artifact persistence
-- inference artifact archiving
-- champion-aligned baseline loading for drift comparison
-- non-blocking drift detection and drift report persistence
-- schema-versioned inference contract validation
-
-The current pipeline supports full train → evaluation → artifact → inference execution.
+| Concern | Implementation |
+|---|---|
+| **Data contracts** | Schema registry with versioned training and inference contracts |
+| **Temporal integrity** | Deterministic split with anti-leakage verification |
+| **Feature orchestration** | Config-driven registry — features activated through YAML, not code |
+| **Model governance** | Registry-based champion policy with explainable promotion decisions |
+| **Promotion explainability** | Every challenger evaluation persists reason code, thresholds, and deltas |
+| **Drift monitoring** | Champion-aligned baseline statistics with z-score mean-shift detection |
+| **Baseline resolution** | Automatic backfill with explicit resolution source traceability |
+| **Governance alerts** | Configurable thresholds for consecutive rejections, critical drift, baseline backfill recurrence |
+| **Artifact lifecycle** | Timestamped persistence, archive rotation, champion retention during cleanup |
+| **BI consumption** | Flat CSV exports with formal semantic contracts for Power BI |
+| **Engineering history** | 22 documented engineering days with decisions, errors, and rationale |
 
 ---
 
-# Pipeline Architecture
-
-The pipeline follows a modular architecture designed to enforce data contracts, prevent temporal leakage, and ensure reproducible CLI execution.
+## Architecture
 
 ```text
                 ┌─────────────────────────┐
                 │         main.py         │
-                │  Pipeline Orchestration │
+                │  Training Orchestration  │
                 └────────────┬────────────┘
                              │
-                             ▼
-                ┌─────────────────────────┐
-                │     config_loader.py    │
-                │   Load YAML Config      │
-                └────────────┬────────────┘
-                             │
-                             ▼
-                ┌─────────────────────────┐
-                │   model_registry.yaml   │
-                │  Champion Model Policy  │
-                └────────────┬────────────┘
-                             │
-                             ▼
-                ┌─────────────────────────┐
-                │    schema_registry.py   │
-                │ Contract Definitions    │
-                └────────────┬────────────┘
-                             │
-                             ▼
-                ┌─────────────────────────┐
-                │       ingestion.py      │
-                │   Controlled Data Load  │
-                └────────────┬────────────┘
-                             │
-                             ▼
-                ┌─────────────────────────┐
-                │       validation.py     │
-                │   Training Contract     │
-                └────────────┬────────────┘
-                             │
-                             ▼
-                ┌─────────────────────────┐
-                │       splitting.py      │
-                │ Temporal Train Split    │
-                └────────────┬────────────┘
-                             │
-               ┌─────────────┴─────────────┐
-               ▼                           ▼
-  ┌─────────────────────┐     ┌──────────────────────────┐
-  │   processing.py     │     │      processing.py       │
-  │ train feature set   │     │ validation with history  │
-  └──────────┬──────────┘     └────────────┬─────────────┘
-             │                             │
-             └─────────────┬───────────────┘
-                           ▼
-                ┌─────────────────────────┐
-                │       training.py       │
-                │ readiness + encoding    │
-                │ baseline model fit      │
-                └────────────┬────────────┘
-                             │
-                             ▼
-                ┌─────────────────────────┐
-                │      evaluation.py      │
-                │ MAE + RMSE validation   │
-                └────────────┬────────────┘
-                             │
-                             ▼
-                ┌─────────────────────────┐
-                │      artifacts.py       │
-                │ persistence + archive   │
-                │ diagnostics + benchmark │
-                │ promotion governance    │
-                └────────────┬────────────┘
-                             │
-                             ▼
-                ┌─────────────────────────┐
-                │ inference_validation.py │
-                │ Inference Contract      │
-                └────────────┬────────────┘
-                             │
-                             ▼
-                ┌─────────────────────────┐
-                │       predict.py        │
-                │ separate inference flow │
-                └─────────────────────────┘
+               ┌─────────────┼──────────────┐
+               ▼             ▼              ▼
+        ┌────────────┐ ┌──────────┐ ┌──────────────┐
+        │ ingestion  │ │ config   │ │ schema       │
+        │            │ │ loader   │ │ registry     │
+        └─────┬──────┘ └──────────┘ └──────────────┘
+              ▼
+        ┌────────────┐
+        │ validation │
+        └─────┬──────┘
+              ▼
+        ┌────────────┐
+        │ splitting  │
+        └─────┬──────┘
+              ▼
+        ┌────────────────┐
+        │ feature        │
+        │ registry +     │
+        │ processing     │
+        └─────┬──────────┘
+              ▼
+        ┌────────────┐
+        │ training   │
+        └─────┬──────┘
+              ▼
+        ┌────────────┐     ┌────────────┐
+        │ evaluation │────▶│ importance │
+        └─────┬──────┘     └────────────┘
+              ▼
+        ┌────────────────────────────────┐
+        │          artifacts             │
+        │  persistence · promotion ·     │
+        │  archiving · governance ·      │
+        │  Power BI exports              │
+        └────────────┬───────────────────┘
+                     │
+                     ▼
+        ┌─────────────────────────┐
+        │       predict.py        │
+        │  Inference Orchestration│
+        └────────────┬────────────┘
+                     │
+          ┌──────────┼──────────┐
+          ▼          ▼          ▼
+   ┌───────────┐ ┌────────┐ ┌───────┐
+   │ inference │ │ drift  │ │ gov   │
+   │ validation│ │ detect │ │ alerts│
+   └───────────┘ └────────┘ └───────┘
 ```
 
-Each module has a clearly defined responsibility:
-
-- main.py — CLI entry point and pipeline orchestration
-- config_loader.py — external configuration loader
-- ingestion.py — controlled dataset loading
-- validation.py — schema and granularity enforcement
-- schema_registry.py — explicit schema contracts for training and inference
-- inference_validation.py — isolated inference contract enforcement
-- splitting.py — deterministic temporal train-validation split
-- processing.py — feature engineering pipeline (calendar, lag, rolling features)
-- feature_registry.py — config-driven feature orchestration
-- training.py — modeling preparation and baseline fitting
-- evaluation.py — validation scoring and prediction generation
-- drift.py — distribution baseline computation and inference drift detection
-- artifacts.py — artifact lifecycle, promotion policy, explainable decision trace, benchmark persistence, drift artifacts
-- predict.py — isolated inference execution using registry-governed champion model
+Training produces governed artifacts. Inference consumes them. The two pipelines share modules but never share execution.
 
 ---
 
-# Repository Structure
+## Pipeline Modules
+
+| Module | Responsibility |
+|---|---|
+| `src/ingestion.py` | Controlled CSV loading with explicit dtypes and datetime parsing |
+| `src/validation.py` | Training schema contract: columns, dtypes, Store+Date granularity |
+| `src/inference_validation.py` | Inference schema contract: required columns, nulls, leakage prevention |
+| `src/schema_registry.py` | Versioned schema definitions for training and inference |
+| `src/splitting.py` | Deterministic temporal split with anti-leakage guard |
+| `src/processing.py` | Pure feature transformations: calendar, lag, rolling, promo |
+| `src/feature_registry.py` | Config-driven feature orchestration and validation context |
+| `src/training.py` | Model factory, data preparation, categorical encoding, fitting |
+| `src/evaluation.py` | Validation scoring (MAE, RMSE), prediction generation |
+| `src/importance.py` | Permutation-based feature importance |
+| `src/inference.py` | Champion loading, historical context reconstruction, inference preparation |
+| `src/drift.py` | Distribution baseline computation and z-score drift detection |
+| `src/artifacts.py` | Artifact lifecycle, promotion policy, governance summary, alerts, Power BI exports |
+| `src/config_loader.py` | YAML configuration loader |
+| `src/logger.py` | Structured logging (console + file) |
+
+---
+
+## Governance System
+
+### Champion Promotion
+
+- Promotion decision compares challenger vs champion on configurable metric (default: MAE)
+- Requires both absolute and relative improvement thresholds
+- Every decision persists: reason code, metric deltas, threshold values
+- Reason codes: `NO_CHAMPION_BASELINE`, `PROMOTED_THRESHOLD_MET`, `REJECTED_ABSOLUTE_THRESHOLD`, `REJECTED_RELATIVE_THRESHOLD`, `REJECTED_ABSOLUTE_AND_RELATIVE`
+
+### Drift Monitoring
+
+- Training persists model-input distribution baseline (mean, std, min, max per feature)
+- Inference loads champion-aligned baseline and computes z-score mean-shift per feature
+- Non-blocking: drift report is persisted but does not halt inference
+- Baseline resolution is traceable: exact source (active, archive, backfill) is recorded
+
+### Governance Alerts
+
+Configurable through `pipeline_config.yaml`:
+- Consecutive promotion rejection threshold
+- Critical drift feature count threshold
+- Recurrent baseline backfill threshold
+
+---
+
+## Current Model Baseline
+
+| Metric | Value |
+|---|---|
+| Model | HistGradientBoostingRegressor |
+| MAE | 508.37 |
+| RMSE | 779.23 |
+| Features | calendar, lag, rolling, promo |
+| Training rows | 914,629 |
+| Validation rows | 102,580 |
+
+---
+
+## Known Limitations & Deliberate Scope
+
+This project prioritizes **pipeline architecture and governance** over model optimization. The following limitations are documented and deliberate:
+
+- **Customers feature is leakage in prospective forecasting.** A controlled A/B ablation (Day 20) measured +61 MAE degradation without it. The feature is retained as a known trade-off with explicit documentation.
+- **No hyperparameter tuning.** The model uses fixed parameters. Tuning was deliberately excluded to keep scope on infrastructure, not modeling.
+- **Single temporal split.** Expanding window cross-validation was not implemented. The current split (train ≤ 2015-04-30, validation > 2015-04-30) is deterministic and reproducible.
+- **26 identical benchmark runs.** This demonstrates deterministic reproducibility — same data, same model, same result every time.
+- **Dataset is Rossmann (German retail pharmacy), not clinical pharma data.** The project name reflects the retail pharmacy domain.
+
+---
+
+## How to Run
+
+**Training pipeline:**
+```bash
+python main.py --config config/pipeline_config.yaml
 ```
-pharma-demand-forecast/
-│
-├── AGENTS.md
-├── README.md
-├── main.py
-├── predict.py
-├── requirements.txt
-│
-├── archive/
-│   ├── diagnostics/
-│   ├── metrics/
-│   ├── models/
-│   └── predictions/
-│
-├── artifacts/
-│   ├── benchmark_history.csv
-│   ├── model_YYYYMMDD_HHMMSS.pkl
-│   ├── metrics_YYYYMMDD_HHMMSS.json
-│   ├── predictions_YYYYMMDD_HHMMSS.csv
-│   ├── top_errors_YYYYMMDD_HHMMSS.csv
-│   ├── error_by_store_YYYYMMDD_HHMMSS.csv
-│   ├── experiment_summary_YYYYMMDD_HHMMSS.json
-│   ├── feature_importance_YYYYMMDD_HHMMSS.csv
-│   ├── promotion_report_latest.json
-│   ├── distribution_baseline_YYYYMMDD_HHMMSS.json
-│   ├── drift_report_latest.json
-│   ├── governance_summary_latest.json
-│   ├── governance_alerts_latest.json
-│   ├── governance_panel_latest.json
-│   ├── powerbi_export_latest.csv
-│   ├── powerbi_benchmark_export_latest.csv
-│   └── inference_predictions_YYYYMMDD_HHMMSS.csv
-│
-├── config/
-│   ├── pipeline_config.yaml
-│   ├── schema_version.yaml
-│   └── model_registry.yaml
-│
-├── data/
-│   ├── inference/
-│   │   └── future_data.csv
-│   └── raw/
-│       ├── train.csv
-│       ├── test.csv
-│       └── store.csv
-│
-├── docs/
-│   ├── engineering_decisions.md
-│   ├── data_dictionary.md
-│   └── archive/
-│       └── backup_readme.md
-│
-├── logs/
-│   └── pipeline.log
-│
-├── notebooks/
-│   └── exploration.ipynb
-│
-├── powerbi/
-│   ├── governance_panel_contract.md
-│   ├── benchmark_history_contract.md
-│   └── pharma_governance_dashboard.pbix
-│
-├── src/
-│   ├── __init__.py
-│   ├── artifacts.py
-│   ├── config_loader.py
-│   ├── drift.py
-│   ├── evaluation.py
-│   ├── feature_registry.py
-│   ├── importance.py
-│   ├── inference.py
-│   ├── inference_validation.py
-│   ├── ingestion.py
-│   ├── logger.py
-│   ├── processing.py
-│   ├── schema_registry.py
-│   ├── splitting.py
-│   ├── training.py
-│   └── validation.py
-│
-└── tests/
-    ├── test_drift_monitoring.py
-    ├── test_model_governance.py
-    └── test_promotion_policy.py
+
+**Inference pipeline:**
+```bash
+python predict.py --config config/pipeline_config.yaml
+```
+
+**Run all tests:**
+```bash
+python -m unittest discover -s tests -p "test_model_governance.py" -v
+python -m unittest discover -s tests -p "test_promotion_policy.py" -v
+python -m unittest discover -s tests -p "test_drift_monitoring.py" -v
 ```
 
 ---
 
-## Documentation
-Detailed technical decisions, trade-offs and architectural evolution are documented in:
-**docs/engineering_decisions.md**
+## Engineering Decisions
+
+All architectural decisions across 22 development days are documented in [`docs/engineering_decisions.md`](docs/engineering_decisions.md), including:
+
+- Problem identification and root cause analysis
+- Implementation rationale and alternatives considered
+- 20 historical errors with architectural lessons and anti-regression rules
+- Verification results for each development day
 
 ---
 
-## Project Status
+## Tech Stack
 
-- Champion governance: model_registry.yaml
-- Promotion policy: benchmark-aware and threshold-based
-- Promotion decision explainability: evaluate_promotion in src/artifacts.py
-- Compatibility wrapper preserved: should_promote delegates to evaluate_promotion
-- Promotion audit persisted in experiment_summary_YYYYMMDD_HHMMSS.json and benchmark_history.csv
-- Promotion report artifact: artifacts/promotion_report_latest.json
-- Champion baseline metrics loaded from active artifacts with archive fallback
-- Archive rotation preserves active champion model and champion baseline metrics
-- Distribution baseline persisted per training run: artifacts/distribution_baseline_YYYYMMDD_HHMMSS.json
-- Inference drift report persisted as latest runtime signal: artifacts/drift_report_latest.json
-- Drift baseline lookup is aligned to the active model consumed in inference
-- Drift baseline resolution metadata persisted in drift report:
-  - baseline_resolution_source
-  - baseline_expected_filename
-  - baseline_resolved_filename
-- Baseline resolution paths supported:
-  - exact_active
-  - exact_archive
-  - backfill_from_active
-  - backfill_from_archive
-- Unified governance observability snapshot persisted: artifacts/governance_summary_latest.json
-- Governance alerts artifact persisted: artifacts/governance_alerts_latest.json
-- Dashboard-friendly governance panel snapshot persisted: artifacts/governance_panel_latest.json
-- Governance alerts support configurable thresholds via runtime config
-- Regression tests cover promotion, drift, model governance, panel snapshot, and configurable alert threshold
-- Flat CSV export for Power BI consumption persisted: artifacts/powerbi_export_latest.csv
-- Power BI semantic contract defined: powerbi/governance_panel_contract.md
-- Flat benchmark history export for Power BI trend consumption persisted: artifacts/powerbi_benchmark_export_latest.csv
-- Benchmark history semantic contract defined: powerbi/benchmark_history_contract.md
-
-### Verification (recommended)
-
-- python -m unittest discover -s tests -p "test_drift_monitoring.py" -v
-- python -m unittest discover -s tests -p "test_model_governance.py" -v
-- python -m unittest discover -s tests -p "test_promotion_policy.py" -v
-- python main.py --config config/pipeline_config.yaml
-- python predict.py --config config/pipeline_config.yaml
-
----
-
-# Planned Pipeline Evolution
-
-Next stages of the project include:
-
-- Power BI dashboard visuals over powerbi_export_latest.csv and powerbi_benchmark_export_latest.csv (snapshot + trend ready)
-- store-level drift segmentation and monitoring
-- alert thresholds by feature family with policy profiles
-- unified observability layer for promotion and drift lifecycle trends
+- Python 3.12
+- pandas 3.0
+- scikit-learn 1.8
+- PyYAML 6.0
+- joblib 1.5
+- Power BI Desktop (governance dashboard)
 
 ---
 

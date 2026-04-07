@@ -1966,3 +1966,86 @@ Observed results:
 
 Day 22 closed with explicit baseline resolution observability in drift runtime governance artifacts.
 Suggested tag: day22-baseline-resolution-observability
+
+## Day 23 — Project Closure as MLOps Case Study
+
+### Decision
+
+Closed the project scope as a modular ML pipeline and governance architecture case study for portfolio.
+
+### Why
+
+The project achieved its original dual purpose:
+- Built real maturity in data engineering and ML architecture
+- Produced a repository that demonstrates professional technical reasoning
+
+After 22 days of iterative development, further model optimization or feature evolution would shift the project scope from pipeline engineering to data science — a different project with different goals.
+
+### Scope Delivered
+
+Architecture layers (14 source modules):
+- ingestion, validation, inference_validation, schema_registry
+- splitting, processing, feature_registry
+- training, evaluation, importance
+- inference, drift
+- artifacts, config_loader, logger
+
+Governance layers:
+- schema versioning (training + inference)
+- champion model registry with explicit/latest policy
+- benchmark-aware promotion with explainable reason codes
+- champion-aligned drift monitoring with baseline resolution traceability
+- configurable governance alerts (rejection streak, critical drift, backfill recurrence)
+- unified governance observability snapshot
+- Power BI consumption layer with two semantic contracts
+
+Orchestration:
+- main.py (training pipeline)
+- predict.py (inference pipeline)
+
+Configuration:
+- pipeline_config.yaml (runtime)
+- model_registry.yaml (champion + promotion policy)
+- schema_version.yaml (contract versioning)
+
+Testing:
+- test_model_governance.py
+- test_promotion_policy.py
+- test_drift_monitoring.py
+
+Documentation:
+- 22 engineering decision days
+- 20 historical errors with anti-regression rules
+- 2 Power BI semantic contracts
+- Data dictionary
+
+### Accepted Limitations
+
+| Limitation | Justification |
+|---|---|
+| Customers leakage | Measured via A/B ablation (Day 20): +61 MAE without it. Retained as explicit trade-off |
+| No hyperparameter tuning | Scope is pipeline architecture, not model optimization |
+| Single temporal split | Deterministic and reproducible — sufficient for architecture validation |
+| Identical benchmark runs | Proves deterministic reproducibility, not stagnation |
+
+### If Resumed — Next Steps
+
+1. Replace Customers with leakage-safe proxy (e.g., historical customer signal per store)
+2. Add hyperparameter tuning (RandomizedSearch or Optuna)
+3. Implement expanding window temporal cross-validation
+4. Test additional models (XGBoost, LightGBM) via existing model factory
+5. Build analytical dashboards (EDA, prediction comparison, error heatmaps)
+6. Store-level drift segmentation
+
+### Verification
+
+- `python -m unittest discover -s tests -p "test_model_governance.py" -v` → OK
+- `python -m unittest discover -s tests -p "test_promotion_policy.py" -v` → OK
+- `python -m unittest discover -s tests -p "test_drift_monitoring.py" -v` → OK
+- `python main.py --config config/pipeline_config.yaml` → completed successfully
+- `python predict.py --config config/pipeline_config.yaml` → completed successfully
+
+### Closure Note
+
+Day 23 closed. Project packaged as MLOps case study for portfolio.
+Suggested tag: v1.0-mlops-case-study

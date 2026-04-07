@@ -392,12 +392,12 @@ clean evolution by small commits
 
 architecture without premature abstraction
 
-Current Technical State (End of Day 14)
+Current Technical State (End of Day 22 — Project Closed as MLOps Case Study)
 Data Ingestion
 
 File:
 
-[ingestion.py](http://_vscodecontentref_/49)
+src/ingestion.py
 
 Responsibilities:
 
@@ -413,7 +413,7 @@ Training Validation Layer
 
 File:
 
-[validation.py](http://_vscodecontentref_/50)
+src/validation.py
 
 Responsibilities:
 
@@ -429,7 +429,7 @@ Inference Validation Layer
 
 File:
 
-[inference_validation.py](http://_vscodecontentref_/51)
+src/inference_validation.py
 
 Responsibilities:
 
@@ -447,9 +447,9 @@ Schema Governance
 
 Files:
 
-[schema_registry.py](http://_vscodecontentref_/52)
+src/schema_registry.py
 
-[schema_version.yaml](http://_vscodecontentref_/53)
+config/schema_version.yaml
 
 Current behavior:
 
@@ -463,9 +463,9 @@ Feature Engineering
 
 Files:
 
-[processing.py](http://_vscodecontentref_/54)
+src/processing.py
 
-[feature_registry.py](http://_vscodecontentref_/55)
+src/feature_registry.py
 
 Implemented features:
 
@@ -481,7 +481,7 @@ Training Layer
 
 File:
 
-[training.py](http://_vscodecontentref_/56)
+src/training.py
 
 Champion baseline:
 
@@ -497,7 +497,7 @@ Evaluation Layer
 
 File:
 
-[evaluation.py](http://_vscodecontentref_/57)
+src/evaluation.py
 
 Outputs:
 
@@ -513,7 +513,7 @@ Artifact Governance
 
 File:
 
-[artifacts.py](http://_vscodecontentref_/58)
+src/artifacts.py
 
 Current artifact lifecycle:
 
@@ -533,11 +533,21 @@ distribution baseline persistence
 
 inference drift report persistence
 
+governance observability summary
+
+governance alerts
+
+governance panel snapshot
+
+Power BI flat export (snapshot)
+
+Power BI benchmark trend export
+
 Drift Monitoring Layer
 
 File:
 
-[drift.py](http://_vscodecontentref_/59)
+src/drift.py
 
 Responsibilities:
 
@@ -547,13 +557,47 @@ z-score mean-shift drift evaluation
 
 non-blocking drift status generation
 
+Governance Observability Layer
+
+Files:
+
+src/artifacts.py (save_governance_summary, save_governance_alerts, save_governance_panel_snapshot)
+
+Responsibilities:
+
+unified governance snapshot consolidating champion, promotion, and drift state
+
+configurable alert generation with severity classification
+
+dashboard-friendly panel snapshot for operational consumption
+
+consistency checks between registry, promotion, and drift alignment
+
+Power BI Consumption Layer
+
+Files:
+
+src/artifacts.py (save_powerbi_export, save_powerbi_benchmark_export)
+
+powerbi/governance_panel_contract.md
+
+powerbi/benchmark_history_contract.md
+
+Responsibilities:
+
+flat CSV export of governance snapshot for Power BI direct consumption
+
+benchmark history trend export with stable typing and analytical datetime
+
+formal semantic contracts defining field mapping, types, and refresh semantics
+
 Inference Layer
 
 Files:
 
-[inference.py](http://_vscodecontentref_/60)
+src/inference.py
 
-[predict.py](http://_vscodecontentref_/61)
+predict.py
 
 Current inference supports:
 
@@ -561,15 +605,19 @@ latest model policy
 
 explicit champion file policy
 
-champion-aligned baseline lookup
+champion-aligned baseline lookup with backfill resolution
 
-drift report generation
+drift report generation with baseline resolution traceability
+
+inference artifact archiving
+
+governance summary and alerts generation after inference
 
 Model Governance
 
 Files:
 
-[model_registry.yaml](http://_vscodecontentref_/62)
+config/model_registry.yaml
 
 Current champion policy:
 
@@ -577,13 +625,27 @@ latest
 
 explicit filename
 
+Promotion policy:
+
+metric-based comparison (MAE, lower-is-better)
+
+min_absolute_improvement threshold
+
+min_relative_improvement threshold
+
+explainable reason codes per decision
+
 Champion Promotion Lifecycle
 
 Current behavior:
 
-Training evaluates and promotes based on policy.
+Training evaluates challenger against champion using configurable thresholds.
+
+Promotion persists structured decision trace with reason code.
 
 Inference consumes active governed model.
+
+Governance alerts monitor consecutive rejection streaks.
 
 Architecture Already Built by Days
 Day 1–3
@@ -666,20 +728,67 @@ Day 14
 
 Champion-aligned drift baseline and inference drift report
 
-Immediate Future Likely Direction
 Day 15
 
-Most natural next step:
+Unified governance observability snapshot
 
-dashboard-oriented consumption of promotion and drift governance artifacts
+Day 16
 
-Possible directions:
+Governance alerts parameterization
+
+Panel snapshot consolidation
+
+Configurable alert thresholds through runtime config
+
+Day 17
+
+Power BI flat export of governance panel
+
+Semantic contract for Power BI field mapping
+
+Day 18
+
+Benchmark history Power BI export hardening
+
+Analytical datetime field and stable boolean typing
+
+Benchmark history semantic contract
+
+Day 19
+
+Power BI governance dashboard construction
+
+Five Power BI-specific error classes resolved (locale, type system, DAX evaluation)
+
+Day 20
+
+Customers leakage A/B ablation assessment
+
+Evidence-based governance decision to retain feature
+
+Day 21
+
+Champion drift baseline alignment restoration
+
+Day 22
+
+Drift baseline resolution observability
+
+Baseline provenance metadata in drift report
+
+Project Status
+
+Closed as MLOps case study (Day 23).
+
+Scope frozen. If resumed, next steps are:
+
+leakage-safe proxy for Customers
+
+hyperparameter tuning
+
+expanding window cross-validation
 
 store-level drift segmentation
-
-alert thresholds by feature family
-
-promotion and drift unified observability panel
 
 Project-Specific Golden Rule
 
@@ -1192,4 +1301,54 @@ In Power BI, independent governance tables must have no relationships between th
 Anti-Regression Rule
 
 Never create relationships between GovernancePanelLatest and BenchmarkHistory. Use ALL() wrapper on measures that must ignore filter context from other tables.
+
+---
+
+Historical Error 19 — Governance Summary Called with Unsupported Argument
+
+Error Observed
+
+TypeError: save_governance_summary() got an unexpected keyword argument 'timestamp'
+
+Root Cause
+
+predict.py called save_governance_summary(artifacts_dir=..., timestamp=...) after Day 15 integration, but save_governance_summary does not accept a timestamp parameter. The function generates its own timestamp internally.
+
+Correct Fix Applied
+
+Removed the timestamp argument from the save_governance_summary() call in predict.py.
+
+Architectural Lesson
+
+When wiring new governance functions into existing orchestration layers, verify the exact function signature before integration. Governance artifacts that generate their own timestamps should not accept external timestamps.
+
+Anti-Regression Rule
+
+Never pass external timestamps to governance functions that generate their own. Check function signature before wiring.
+
+---
+
+Historical Error 20 — Champion Drift Baseline File Missing for Active Champion
+
+Error Observed
+
+Drift report returned status: baseline_missing even though baseline files existed in artifacts.
+
+Root Cause
+
+Active champion in model_registry.yaml pointed to model_20260316_161656.pkl, but no distribution_baseline_20260316_161656.json existed. A newer baseline (distribution_baseline_20260406_124225.json) existed but filename did not match the champion timestamp.
+
+Correct Fix Applied
+
+Two-level fix:
+1. Immediate: copied existing baseline to expected filename for champion alignment.
+2. Structural: implemented automatic backfill policy in load_distribution_baseline_for_model() that materializes expected baseline from latest available when exact match is missing.
+
+Architectural Lesson
+
+Champion model governance and drift baseline governance must maintain filename parity. When champion is retained across multiple training cycles, its baseline must either persist in active artifacts or be reconstructable via governed backfill.
+
+Anti-Regression Rule
+
+When champion model is retained during archive rotation, its paired distribution baseline must also be retained. The backfill policy exists as safety net, not as primary resolution strategy.
 
